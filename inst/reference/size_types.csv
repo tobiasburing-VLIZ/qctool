@@ -1,0 +1,16 @@
+code_or_word,kind,note
+OBSINDLX,length,P01 codes in measurementTypeID; words are looked for in measurementType
+OBSMAXLX,length,
+OBSMINLX,length,
+SL01XX01,length,
+TL01XX01,length,
+FL01XX01,length,
+CAPWID01,width,
+SPWGXX01,weight,
+length,length,
+width,width,
+height,length,
+diameter,length,
+weight,weight,
+mass,weight,
+biomass,weight,

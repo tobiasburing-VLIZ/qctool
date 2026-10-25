@@ -1,0 +1,5 @@
+term,also_written_as,note
+present,presence|p|1|yes|observed|found,
+absent,absence|a|0|no|not observed|not found,
+detected,,EMODnet only (decided 2026-10-23); not in the GBIF/OBIS vocabulary
+notDetected,not detected|non detected|nondetected,EMODnet only (decided 2026-10-23); not in the GBIF/OBIS vocabulary

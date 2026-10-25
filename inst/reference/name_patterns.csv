@@ -1,0 +1,8 @@
+pattern,problem,move_to
+"\s+spp?\.?$","contains the qualifier 'sp.' or 'spp.'",identificationQualifier
+"\s+(cf|aff)\.?\s","contains the qualifier 'cf.' or 'aff.'",identificationQualifier
+"\?","contains '?' (uncertain identification)",identificationQualifier
+"_","contains underscores (typical for DNA pipeline output)",replace by spaces
+"(?i)\b(uncultured|unculturable|unidentified|unknown|environmental sample|metagenome)\b","is not a taxon name (uncultured, unidentified, environmental sample, metagenome)",taxonRemarks; give the lowest taxon that is certain
+"\s\(?[A-Z][^\s,]*[^,]*,?\s*\d{4}\)?$","contains the authorship",scientificNameAuthorship
+"\s{2,}","contains a double space",remove the extra space

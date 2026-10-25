@@ -1,0 +1,16 @@
+section,label,value
+tool,What it does,"Checks Darwin Core datasets (archives, IPT/GBIF/OBIS addresses or simple tables) against the EMODnet Biology / EurOBIS rules, which include the OBIS and GBIF rules, before they are harvested. Every issue points to a record."
+tool,Developed by,"Tobias Büring, EMODnet Biology data management team, VLIZ (Flanders Marine Institute)"
+tool,Contact,info@eurobis.org
+disclaimer,Disclaimer,"This is a test (beta) version. The results are an aid for data providers and data managers, not a decision: the EMODnet Biology data management team decides what is harvested. Online checks use WoRMS, the NERC Vocabulary Server and OBIS; their content and availability are outside our control, and answers are stored for 30 days. No warranty of any kind."
+link,EMODnet Biology,https://emodnet.ec.europa.eu/en/biology
+link,EurOBIS,https://www.eurobis.org/
+link,OBIS,https://obis.org/
+link,OBIS manual (data formatting and quality control),https://manual.obis.org/
+link,obistools (OBIS quality control in R),https://github.com/iobis/obistools
+link,Ocean Teacher Global Academy (OBIS data management courses),https://classroom.oceanteacher.org/
+link,Darwin Core terms,https://dwc.tdwg.org/terms/
+link,WoRMS (World Register of Marine Species),https://www.marinespecies.org/
+link,NERC Vocabulary Server (search),https://vocab.nerc.ac.uk/search_nvs/
+link,GBIF IPT manual,https://ipt.gbif.org/manual/
+link,VLIZ (Flanders Marine Institute),https://www.vliz.be/en

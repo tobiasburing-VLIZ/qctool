@@ -1,0 +1,14 @@
+id_field,value_field,direction,note
+institutionID,institutionCode,both ways,one institution: one code and one ID
+collectionID,collectionCode,both ways,one collection: one code and one ID
+datasetID,datasetName,both ways,one dataset: one name and one ID
+recordedByID,recordedBy,both ways,a person (or list of people) and their ORCID(s)
+identifiedByID,identifiedBy,both ways,a person (or list of people) and their ORCID(s)
+countryCode,country,both ways,one country: one name and one code
+higherGeographyID,higherGeography,both ways,one place: one name and one ID
+taxonID,scientificName,one way,"the dataset's own taxon code; in DNA data often the ASV, and one taxon has many ASVs"
+locationID,locality,one way,one location has one locality; a locality can hold several locations
+organismID,scientificName,one way,one organism is one taxon; a taxon has many organisms
+eventID,eventDate,one way,"occurrence core: the occurrences of one event share its date"
+eventID,decimalLatitude,one way,"occurrence core: the occurrences of one event share its position"
+eventID,decimalLongitude,one way,"occurrence core: the occurrences of one event share its position"

@@ -1,0 +1,9 @@
+term,also_written_as,note
+HumanObservation,observation|human observation,Darwin Core basisOfRecord vocabulary
+MachineObservation,machine observation|sensor,
+MaterialSample,material sample|sample,
+PreservedSpecimen,preserved specimen|specimen,
+LivingSpecimen,living specimen,
+FossilSpecimen,fossil specimen|fossil,
+MaterialCitation,material citation|literature|literature record,Darwin Core since 2021
+Occurrence,,Only when nothing more specific applies

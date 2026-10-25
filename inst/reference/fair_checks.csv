@@ -1,0 +1,32 @@
+letter,check_id,note
+F,eml_title_filled,Findable: the dataset can be found and recognised
+F,eml_title_informative,
+F,eml_abstract_filled,
+F,eml_abstract_informative,
+F,eml_keywords_filled,
+F,eml_persistent_identifier,
+F,eml_geographic_coverage_filled,
+F,eml_temporal_coverage_filled,
+F,eml_taxonomic_coverage_filled,
+A,eml_present,Accessible: someone can be contacted and the resource can be reached
+A,eml_contact_filled,
+A,eml_metadata_provider_filled,
+A,ipt_url_length,
+A,eml_links_work,
+I,field_names_known,Interoperable: standard terms and vocabularies
+I,scientificnameid_worms_format,
+I,scientificnameid_exists_in_worms,
+I,measurementtypeid_filled,
+I,measurementtypeid_valid,
+I,measurementunitid_filled,
+I,measurementunitid_valid,
+I,eventdate_iso8601,
+I,eml_language_given,
+R,eml_license_valid,Reusable: licence - citation - people and methods
+R,license_data_matches_eml,
+R,eml_citation_filled,
+R,eml_creator_filled,
+R,eml_methods_described,
+R,eml_people_have_orcid,
+R,eml_organisation_identifier,
+R,eml_no_placeholders,

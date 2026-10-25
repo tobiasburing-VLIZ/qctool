@@ -1,0 +1,7 @@
+unit_code,also_written_as,note
+UUUU,individuals; individual; ind; inds; count; counts; number; n; #; none; unitless; dimensionless; -; no unit; specimens; psu; PSU,Dimensionless: counts are usually written as individuals and practical salinity as PSU. Used by unit_text_matches_unitid besides the NERC labels
+XXXX,not applicable; n/a; none; -; no unit,Not applicable: the unit for text values such as sex or life stage
+UPAA,°C; ºC; deg C; degC; degrees C; degree C; celsius; degrees celsius,Degrees Celsius
+UPCT,%; percent; percentage; pct,Percent
+ULAA,m; meter; meters; metre; metres,Metres
+UGKG,g/kg; mg/g; psu; PSU; ppt; ‰; per mille,Grams per kilogram: mg/g is the same unit (northern shrimp dataset); salinity is often written as PSU or ppt

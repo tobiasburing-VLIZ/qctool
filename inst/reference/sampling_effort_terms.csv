@@ -1,0 +1,31 @@
+code,note
+Q01,any term of the NERC Q01 collection (sampling equipment and effort)
+AREABEDS,sampled area of the bed (from EMODnetBiocheck BODCeffort; mostly P01 terms linked to P02 SAMP)
+VOLWBSMP,sampled volume of water
+LENTRACK,length of track
+AZDRZZ01,
+VOLFFMXX,
+SZCLBIO1,
+PRSZSPLW,
+MSHSIZE2,
+MSHSIZE1,
+MSHSIZE3,
+DSSPXTMT,
+DSSPPRMT,
+DSAMPA01,
+MTHHGHT1,
+MTHAREA1,
+MTHWDTH1,
+DSSPMT01,
+NMSPPF01,
+DSPSSP01,
+PRSZSPUP,
+WASPXX01,
+COREWDTH,
+VOLXXXXX,
+VOLFFMDT,
+VOLFDGDT,
+VOLFMCXX,
+VOLSEDSM,
+VOLSPOPC,
+M91BA36A,

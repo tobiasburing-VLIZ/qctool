@@ -1,0 +1,4 @@
+code,note
+NMSPINST,name of sampling instrument (value preferably an L22 term)
+Q0100002,deprecated; replaced by NMSPINST
+L22,any NERC L22 term (device catalogue) used as measurementValueID

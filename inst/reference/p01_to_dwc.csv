@@ -1,0 +1,10 @@
+code,dwc_field,note
+SNANID01,scientificNameID,from EMODnetBiocheck p01todwc
+SCNAME01,scientificName,
+SAMPPROT,samplingProtocol,
+MAXWDIST,maximumDepthInMeters,
+MINWDIST,minimumDepthInMeters,
+PRESABS1,occurrenceStatus,
+SSAMID01,eventID,
+EVNTID01,eventID,
+SAMPID01,parentEventID,

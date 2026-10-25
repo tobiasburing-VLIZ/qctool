@@ -1,0 +1,40 @@
+Package: qctool
+Title: QC Tool (Beta): Quality Control of Darwin Core Datasets for EMODnet Biology
+Version: 0.0.2
+Authors@R:
+    person("Tobias", "Büring", email = "tobias.buring@vliz.be", role = c("aut", "cre"))
+Description: Checks Darwin Core Archives and simple tables against the EMODnet
+    Biology / EurOBIS data standards (which include the OBIS and GBIF rules).
+    Every issue points to a specific record. The rules (which checks run, how
+    severe they are, which fields are required) live in an Excel workbook that
+    the data management team can edit without changing the code.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.2)
+Imports:
+    bslib,
+    curl,
+    data.table,
+    DT,
+    htmltools,
+    htmlwidgets,
+    jsonlite,
+    leaflet,
+    maps,
+    markdown,
+    openxlsx2,
+    plotly,
+    readxl,
+    shiny,
+    stats,
+    tools,
+    utils,
+    xml2,
+    zip
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.0.0

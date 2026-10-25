@@ -1,0 +1,67 @@
+wrong_name,term,note
+rank,taxonRank,MGnify archives
+taxon_rank,taxonRank,
+latitude,decimalLatitude,
+lat,decimalLatitude,
+lat_dd,decimalLatitude,
+decimal_latitude,decimalLatitude,
+y,decimalLatitude,
+longitude,decimalLongitude,
+lon,decimalLongitude,
+long,decimalLongitude,
+lng,decimalLongitude,
+lon_dd,decimalLongitude,
+decimal_longitude,decimalLongitude,
+x,decimalLongitude,
+date,eventDate,
+sampling_date,eventDate,
+sample_date,eventDate,
+event_date,eventDate,
+collection_date,eventDate,
+datetime,eventDate,
+time,eventTime,
+species,scientificName,
+taxon,scientificName,
+taxon_name,scientificName,
+scientific_name,scientificName,
+valid_name,scientificName,
+latin_name,scientificName,
+name_latin,scientificName,
+species_name,scientificName,
+scientificname,scientificName,
+aphiaid,scientificNameID,use the WoRMS LSID urn:lsid:marinespecies.org:taxname:<AphiaID>
+aphia_id,scientificNameID,use the WoRMS LSID urn:lsid:marinespecies.org:taxname:<AphiaID>
+lsid,scientificNameID,
+author,scientificNameAuthorship,
+authority,scientificNameAuthorship,
+depth,minimumDepthInMeters,also maximumDepthInMeters
+depth_m,minimumDepthInMeters,also maximumDepthInMeters
+min_depth,minimumDepthInMeters,
+max_depth,maximumDepthInMeters,
+count,individualCount,or an eMoF count (OCOUNT01)
+counts,individualCount,or an eMoF count (OCOUNT01)
+number,individualCount,or an eMoF count (OCOUNT01)
+abundance,organismQuantity,or an eMoF abundance
+stage,lifeStage,
+life_stage,lifeStage,
+gender,sex,
+station,locationID,or locality
+site,locationID,or locality
+location,locality,
+place,locality,
+country,country,
+remarks,occurrenceRemarks,
+comment,occurrenceRemarks,
+comments,occurrenceRemarks,
+reference,bibliographicCitation,
+citation,bibliographicCitation,
+institute,institutionCode,
+institution,institutionCode,
+dataset,datasetName,
+dataset_name,datasetName,
+uncertainty,coordinateUncertaintyInMeters,
+coordinate_uncertainty,coordinateUncertaintyInMeters,
+status,occurrenceStatus,
+presence,occurrenceStatus,
+id,occurrenceID,check: is it unique and globally unique?
+record_id,occurrenceID,check: is it unique and globally unique?

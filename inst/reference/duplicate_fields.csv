@@ -1,0 +1,24 @@
+field,source,note
+decimalLatitude,record (inherited),"Fields compared by duplicate_occurrences (based on EMODnetBiocheck). Fields missing in a dataset are skipped. Besides these, ALL eMoF values of an occurrence are compared, and for DNA data the sequence."
+decimalLongitude,record (inherited),
+eventDate,record (inherited),
+eventTime,record (inherited),
+minimumDepthInMeters,record (inherited),
+maximumDepthInMeters,record (inherited),
+eventID,record,
+lifeStage,record,
+sex,record,
+samplingProtocol,record (inherited),
+scientificName,record,
+scientificNameID,record,
+identificationQualifier,record,
+identificationRemarks,record,
+catalogNumber,record,specimen identifiers: different specimens are not duplicates
+recordNumber,record,
+organismID,record,
+materialEntityID,record,
+materialSampleID,record,
+individualCount,record,
+organismQuantity,record,
+taxonID,record,DNA data: different ASVs/OTUs
+associatedSequences,record,
