@@ -234,34 +234,3 @@ cannot drift apart. A row without a function shows up as *not yet implemented*.
 | `dev/run_test_datasets.R` | runs everything in `../Datasets` and saves reports to `../output` |
 | `docs/design.md` | how the tool is built and why (the code refers to its sections) |
 | `docs/storing_qc_requests.md` | for IT: how the checks people run could be stored (a request log, an API), not built yet |
-
-## Status (milestones 4a, 4b and 5)
-
-Step 5 (the app) is built: the screens above, tested with `shiny::testServer()`
-(`tests/testthat/test-app.R`) and by hand in the browser. Not yet: the "annotated copy of the
-provider's own file" download, run history (milestone 7), and running big checks in a background
-process for a shared server.
-
-Performance: FIFD (43k events, 8.2M occurrences, 33.8M eMoF) takes 36–84 s to read and about
-4–5 minutes to check with all 137 checks, online lookups included; peak memory 13.4 GB. Small
-datasets: 1–16 s (from the cache; a first run with thousands of new names takes minutes).
-Details: `docs/design.md`, sections 4.5 and 8.
-
-Built: readers for archives (zip/folder, meta.xml, files without header, default values, quoted
-CSV), tables (CSV/TXT/Excel with column mapping, Excel dates as ISO 8601), IPT/GBIF/OBIS
-addresses (size limit before and during download) and the full EML metadata; engine; rules
-workbook; compact issue storage with record pointers; Excel/CSV/JSON export; **inheritance**
-from parent events (`R/20_prepare.R`); **all 121 offline checks** (milestone 4a):
-structure, identifiers, required fields, vocabularies, dates, location, depth, taxonomy,
-eMoF, duplicates, DNA, metadata/FAIR, outliers; and the **16 online checks** (milestone 4b):
-WoRMS (ID exists, accepted, name matches ID, rank, marine, names without ID), NERC (terms
-exist, not deprecated, unit fits the type, unit text fits the unit ID, type text fits the
-label), land (position on land, marine taxon on land) and depth below the sea floor.
-
-Not yet built (shown as *not yet implemented*): the later checks (milestones 6 and 7).
-
-Reference lists the checks use (all editable CSV in `inst/reference/`): vocabularies
-(basisOfRecord, occurrenceStatus, sex, lifeStage, taxonRank, dcType, countryCode,
-establishment terms), `inheritable_fields.csv`, `name_patterns.csv`, `duplicate_fields.csv`,
-`nerc_quantity_terms.csv`, `sampling_effort_terms.csv`, `sampling_instrument_terms.csv`,
-`p01_to_dwc.csv`, `size_types.csv`.
