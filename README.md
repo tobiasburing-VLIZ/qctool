@@ -25,7 +25,7 @@ Installing the tool installs every package it needs; nothing to install by hand.
 
 ```r
 install.packages("remotes")
-remotes::install_github("toastershock/qctool")
+remotes::install_github("tobiasburing-VLIZ/qctool")
 # While the repository is private, GitHub first needs a token:
 # usethis::create_github_token(), then gitcreds::gitcreds_set()
 ```
