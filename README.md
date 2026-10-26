@@ -25,7 +25,7 @@ Installing the tool installs every package it needs; nothing to install by hand.
 
 ```r
 install.packages("remotes")
-remotes::install_github("toastershock/qctool")
+remotes::install_github("tobiasburing-VLIZ/qctool")
 # While the repository is private, GitHub first needs a token:
 # usethis::create_github_token(), then gitcreds::gitcreds_set()
 ```
@@ -125,7 +125,7 @@ qc_relationship(result, "emof:1", "emof:2", "power")   # a crude fit, the odd re
 qc_sex_ratio(result)         # sexes per taxon
 qc_tracks(result, "organismID")       # tracks in date order
 qc_links(result)             # broken links: missing events, occurrences, parents; doubled IDs
-qc_one_to_one(result)        # values and their IDs: one name with two IDs, one typeID with two texts, ...
+qc_one_to_one(result)        # values with several IDs (or IDs with several values), all of them with their records
 qc_tables(result)            # the tables and how they are linked
 qc_checks("NERC label")      # find a check by words
 qc_map(result)               # map of the positions with problems (Viewer)

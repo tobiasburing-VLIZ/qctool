@@ -171,17 +171,31 @@ qc_links <- function(result) checks_in_short(result, link_check_ids)
 #' Values and their IDs: does every value go with one ID, and every ID with
 #' one value?
 #'
-#' The one-to-one checks in one table: scientificName and scientificNameID,
-#' measurementType and measurementTypeID, measurementUnit and
-#' measurementUnitID, measurementValue and measurementValueID (per type), and
-#' the pairs of `inst/reference/one_to_one_pairs.csv` (institutionCode and
+#' What the one-to-one checks found, one row per conflict: scientificName and
+#' scientificNameID, measurementType and measurementTypeID, measurementUnit
+#' and measurementUnitID, measurementValue and measurementValueID (per type),
+#' and the pairs of `inst/reference/one_to_one_pairs.csv` (institutionCode and
 #' institutionID, country and countryCode, ...).
 #'
 #' @inheritParams qc_links
-#' @return As [qc_links()]: one row per check (and table), with the records
-#'   that use a less common combination (0 = all fine).
+#' @return One row per value with several IDs (or ID with several values):
+#'   check_id, severity, table, fields (the pair), value, message, suggestion
+#'   (all its IDs or values with their number of records, e.g. "use one
+#'   measurementUnitID: 123A (40 records) or 123B (3 records)") and records
+#'   (those with a less common one, to change). Errors first. No rows: every
+#'   value goes with one ID.
+#' @examples
+#' \dontrun{
+#' qc_one_to_one(result)[, .(value, suggestion)]
+#' #   value   suggestion
+#' #   metres  use one measurementUnitID: 123A (40 records) or 123B (3 records)
+#' }
 #' @export
-qc_one_to_one <- function(result) checks_in_short(result, one_to_one_check_ids)
+qc_one_to_one <- function(result) {
+  conflicts <- result$issues_grouped[check_id %chin% one_to_one_check_ids]
+  conflicts <- conflicts[order(-severity_rank[severity], match(check_id, one_to_one_check_ids), -records)]
+  conflicts[, .(check_id, severity, table, fields = field, value, message, suggestion, records)]
+}
 
 # The checks of the links between tables, in the order the overview shows them.
 link_check_ids <- c("extension_links_to_core", "extension_eventid_matches_coreid", "extension_occurrenceid_matches_coreid",

@@ -153,22 +153,24 @@ check_measurementvalueid_consistent <- function(dataset, settings) {
   values[, `:=`(n_ids = uniqueN(value_id[!is.na(value_id)]), some_without = anyNA(value_id),
                 usual_id = most_common(value_id)), by = .(type, value)]
   without_id <- values[n_ids >= 1 & some_without & is.na(value_id)]
-  different_ids <- values[n_ids > 1 & !is.na(value_id)]
   # One valueID for different numbers of the same type: the ID is no value.
-  numbers[, n_values := uniqueN(value), by = .(type, value_id)]
+  numbers[, `:=`(n_values = uniqueN(value), examples = paste(utils::head(unique(value), 3), collapse = ", "),
+                 first_row = row[1]), by = .(type, value_id)]
   numbers <- numbers[n_values > 1]
+  number_types <- type_text(data[numbers$first_row])
   combine_issues(list(
     new_issues(dataset, name, without_id$row, field = "measurementValueID", value = without_id$value,
                message = "The same value has a measurementValueID in other records but not here",
                suggestion = without_id$usual_id),
-    new_issues(dataset, name, different_ids$row, field = "measurementValueID", value = different_ids$value,
-               message = "The same value has different measurementValueIDs in this dataset",
-               suggestion = paste("most used:", different_ids$usual_id)),
-    one_to_one_issues(dataset, name, "measurementValue", "measurementValueID", within = types, both_ways = FALSE, only = !is_number),
+    # Text values: one valueID per value and one value per valueID, within a type.
+    one_to_one_issues(dataset, name, "measurementValue", "measurementValueID", within = types, only = !is_number,
+                      within_text = function(rows) type_text(data[rows])),
     new_issues(dataset, name, numbers$row, field = "measurementValueID", value = numbers$value_id,
                message = "The same measurementValueID is used for different measured numbers",
-               suggestion = paste("a measurementValueID stands for one value from a vocabulary (e.g. 'adult');",
-                                  "leave it empty for measured numbers, or move the term to measurementTypeID or measurementUnitID"))))
+               suggestion = sprintf(paste("within %s: used for %s different numbers (%s, ...). A measurementValueID stands for one",
+                                          "value from a vocabulary (e.g. 'adult'): leave it empty for measured numbers, or move",
+                                          "the term to measurementTypeID or measurementUnitID"),
+                                    number_types, prettyNum(numbers$n_values, big.mark = ","), numbers$examples))))
 }
 
 # -----------------------------------------------------------------------------

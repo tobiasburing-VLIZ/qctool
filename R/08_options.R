@@ -21,6 +21,9 @@
 # qctool.max_upload_mb            3000      largest file uploaded in the app (MB); also qc_app(max_upload_mb = )
 # qctool.block_private_addresses  FALSE     TRUE: refuse web addresses on the server's own network
 #                                           (localhost, 10.x, 192.168.x, ...). For a public server
+# qctool.max_table_rows           100000    app, Explore > Tables: a table up to this many rows is shown
+#                                           whole, so the filters above its columns search all rows;
+#                                           a bigger one shows its first 100 rows (search it with Find)
 #
 # qc_app() has two more settings as arguments: port and stop_on_close (TRUE:
 # the app stops when its browser tab is closed; FALSE when several people
@@ -36,7 +39,8 @@ option_defaults <- list(
   qctool.max_download_mb         = 2000,
   qctool.max_unzipped_mb         = Inf,
   qctool.max_upload_mb           = 3000,
-  qctool.block_private_addresses = FALSE
+  qctool.block_private_addresses = FALSE,
+  qctool.max_table_rows          = 100000
 )
 
 # The value of an option, or its default.

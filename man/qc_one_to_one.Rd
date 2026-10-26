@@ -11,13 +11,24 @@ qc_one_to_one(result)
 \item{result}{A \code{\link[=qc_check]{qc_check()}} result.}
 }
 \value{
-As \code{\link[=qc_links]{qc_links()}}: one row per check (and table), with the records
-that use a less common combination (0 = all fine).
+One row per value with several IDs (or ID with several values):
+check_id, severity, table, fields (the pair), value, message, suggestion
+(all its IDs or values with their number of records, e.g. "use one
+measurementUnitID: 123A (40 records) or 123B (3 records)") and records
+(those with a less common one, to change). Errors first. No rows: every
+value goes with one ID.
 }
 \description{
-The one-to-one checks in one table: scientificName and scientificNameID,
-measurementType and measurementTypeID, measurementUnit and
-measurementUnitID, measurementValue and measurementValueID (per type), and
-the pairs of \code{inst/reference/one_to_one_pairs.csv} (institutionCode and
+What the one-to-one checks found, one row per conflict: scientificName and
+scientificNameID, measurementType and measurementTypeID, measurementUnit
+and measurementUnitID, measurementValue and measurementValueID (per type),
+and the pairs of \code{inst/reference/one_to_one_pairs.csv} (institutionCode and
 institutionID, country and countryCode, ...).
+}
+\examples{
+\dontrun{
+qc_one_to_one(result)[, .(value, suggestion)]
+#   value   suggestion
+#   metres  use one measurementUnitID: 123A (40 records) or 123B (3 records)
+}
 }

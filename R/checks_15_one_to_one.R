@@ -13,9 +13,12 @@
 #
 # One value with several IDs: one of the IDs is probably wrong (error).
 # One ID with several values: usually spelling, e.g. with and without the
-# author (warning). Reported are the records with a less common combination;
-# the suggestion is the combination most records use. Empty values are left
-# out. Like BioCheck's one_to_one_check().
+# author (warning). Empty values are left out. Like BioCheck's one_to_one_check().
+#
+# Each value with several IDs is one problem, which names all its IDs with
+# their number of records, so the conflict is seen at once:
+#   value 'metres', suggestion "use one measurementUnitID: 123A (40 records) or 123B (3 records)"
+# Its records are those with a less common ID (here the 3 with 123B).
 # =============================================================================
 
 # Records whose value and ID do not pair up one-to-one, as issues.
@@ -24,7 +27,11 @@
 #   both_ways   FALSE: only "one ID with several values" (e.g. organismID -> scientificName,
 #               where one taxon has many organisms)
 #   only        TRUE for the rows to compare (default all)
-one_to_one_issues <- function(dataset, table_name, value_field, id_field, within = NULL, both_ways = TRUE, only = NULL) {
+#   within_text a function(rows) that names the 'within' group of these rows in
+#               the suggestion, e.g. "measurementType 'life stage'" (only called
+#               for rows that are reported: quick on big tables)
+one_to_one_issues <- function(dataset, table_name, value_field, id_field, within = NULL, both_ways = TRUE, only = NULL,
+                              within_text = NULL) {
   data <- dataset$tables[[table_name]]
   value <- data[[value_field]]
   id <- data[[id_field]]
@@ -41,36 +48,55 @@ one_to_one_issues <- function(dataset, table_name, value_field, id_field, within
   counts <- pairs[, .N, by = .(w, v, i)]
   field <- paste(value_field, id_field, sep = "; ")
 
-  # The records of the less common combinations in groups (by 'group') with more than one 'other'.
-  odd_rows <- function(group, other) {
-    stats <- counts[, .(kinds = .N, usual = get(other)[which.max(N)], usual_n = max(N)), by = group]
-    odd <- counts[stats[kinds > 1], on = group]
-    odd <- odd[get(other) != usual]
-    if (!nrow(odd)) return(NULL)
-    pairs[odd, on = c(group, other), nomatch = 0L]
+  # Per value (or ID: 'key') with more than one partner: all partners in words,
+  # the most used first, and the records that use one of the others.
+  conflicts <- function(key, partner, partner_levels) {
+    group <- c("w", key)
+    several <- counts[counts[, .(kinds = .N), by = group][kinds > 1], on = group]
+    if (!nrow(several)) return(NULL)
+    setorderv(several, c(group, "N"), order = c(1L, 1L, -1L))
+    several[, `:=`(usual = seq_len(.N) == 1L, partners = partner_list(partner_levels[get(partner)], N)), by = group]
+    odd <- pairs[several[usual == FALSE], on = c(group, partner), nomatch = 0L]
+    # "within measurementType 'life stage': ", the same for the whole group
+    odd[, prefix := if (is.null(within_text)) "" else sprintf("within %s: ", within_text(row[1])), by = w]
+    odd
   }
 
   issues <- list()
-  if (both_ways) {
-    several_ids <- odd_rows(c("w", "v"), "i")
-    if (!is.null(several_ids)) {
-      issues$ids <- new_issues(dataset, table_name, several_ids$row, field = field,
-        value = sprintf("%s → %s", value[several_ids$row], id[several_ids$row]),
-        message = sprintf("The same %s has several %ss in this dataset; this record uses a less common one", value_field, id_field),
-        suggestion = sprintf("%s of most records (%s): %s", id_field, format(several_ids$usual_n, big.mark = ","),
-                             id_levels[several_ids$usual]))
-    }
+  several_ids <- if (both_ways) conflicts("v", "i", id_levels)
+  if (!is.null(several_ids)) {
+    issues$ids <- new_issues(dataset, table_name, several_ids$row, field = field, value = value_levels[several_ids$v],
+      message = sprintf("The same %s has several %ss in this dataset; this record uses a less common one", value_field, id_field),
+      suggestion = sprintf("%suse one %s: %s", several_ids$prefix, id_field, several_ids$partners))
   }
-  several_values <- odd_rows(c("w", "i"), "v")
+  several_values <- conflicts("i", "v", value_levels)
   if (!is.null(several_values)) {
-    issues$values <- new_issues(dataset, table_name, several_values$row, field = field,
-      value = sprintf("%s → %s", id[several_values$row], value[several_values$row]),
+    issues$values <- new_issues(dataset, table_name, several_values$row, field = field, value = id_levels[several_values$i],
       message = sprintf("The same %s goes with several %ss in this dataset; this record uses a less common one", id_field, value_field),
-      suggestion = sprintf("%s of most records (%s): %s", value_field, format(several_values$usual_n, big.mark = ","),
-                           value_levels[several_values$usual]),
+      suggestion = sprintf("%suse one %s: %s", several_values$prefix, value_field, several_values$partners),
       severity_hint = "warning")
   }
   combine_issues(issues)
+}
+
+# The measurement type of each eMoF row in words, for messages: "measurementType 'life stage'"
+# (or its measurementTypeID when the text is empty).
+type_text <- function(data) {
+  type <- column_or_na(data, "measurementType")
+  type_id <- column_or_na(data, "measurementTypeID")
+  fifelse(is_empty_value(type), sprintf("measurementTypeID '%s'", type_id), sprintf("measurementType '%s'", type))
+}
+
+# The partners of one value, with their records, the most used first:
+# "123A (40 records) or 123B (3 records)"; more than five: "A (9 records), ... and 4 more".
+partner_list <- function(texts, records, max_shown = 5) {
+  shown <- seq_len(min(length(texts), max_shown))
+  words <- sprintf("%s (%s %s)", shorten(texts[shown], 100), prettyNum(records[shown], big.mark = ","),
+                   ifelse(records[shown] == 1, "record", "records"))
+  more <- length(texts) - length(shown)
+  if (more > 0) return(sprintf("%s and %s more", paste(words, collapse = ", "), prettyNum(more, big.mark = ",")))
+  if (length(words) == 1) return(words)
+  paste(paste(words[-length(words)], collapse = ", "), "or", words[length(words)])
 }
 
 # The tables of a dataset that have both fields.

@@ -1,17 +1,28 @@
 # =============================================================================
 # Explore > Tables: the data itself. Which tables there are and how their
-# records are linked; the rows of a table (the first 100, or those a search
-# finds in the whole table); its columns, how often each is filled.
+# records are linked; the rows of a table (all of them up to the option
+# qctool.max_table_rows, else the first 100, or those a search finds in the
+# whole table); its columns, how often each is filled.
+# The filter boxes above the columns only search the rows handed to the table,
+# and DT switches a box off when its column has one value in those rows: hence
+# whole tables where possible.
 # The functions behind it are in 49_tables.R (also usable in R).
 # =============================================================================
 
 rows_shown_first <- 100
 
+# How many rows of a table are shown before a search: all of them, unless the
+# table is bigger than the option qctool.max_table_rows.
+rows_shown_at_start <- function(result, table_name) {
+  rows <- nrow(result$dataset$tables[[table_name]])
+  if (rows <= qc_option("qctool.max_table_rows")) rows else rows_shown_first
+}
+
 tables_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::p(class = "text-muted mt-2", "The data as it was read: the tables, how their records are linked, and their rows.",
-             "Search a whole table below; only the rows found are shown."),
+             "Filter the rows with the boxes above the columns, or search a whole table with Find; then only the rows found are shown."),
     shiny::uiOutput(ns("structure")),
     shiny::h5(class = "mt-4", "Rows"),
     bslib::layout_columns(
@@ -59,15 +70,20 @@ tables_server <- function(id, result) {
     found <- shiny::reactive({
       shiny::req(result(), input$table)
       outcome <- searched()
-      if (is.null(outcome)) safely(qc_find_rows(result(), input$table, how = "first", limit = rows_shown_first)) else outcome
+      if (!is.null(outcome)) return(outcome)
+      safely(qc_find_rows(result(), input$table, how = "first", limit = rows_shown_at_start(result(), input$table)))
     })
 
     output$rows_note <- shiny::renderUI({
       f <- found()
       if (failed(f)) return(error_alert(f, "The search"))
       searching <- !is.null(searched())
-      text <- if (!searching) {
-        sprintf("The first %s of %s rows. 'line' is the line in the file.", format(nrow(f$rows), big.mark = ","), format(f$total, big.mark = ","))
+      text <- if (!searching && nrow(f$rows) == f$total) {
+        sprintf("All %s rows. The boxes above the columns filter them. 'line' is the line in the file.", format(f$total, big.mark = ","))
+      } else if (!searching) {
+        sprintf(paste("The first %s of %s rows. The boxes above the columns only filter these rows:",
+                      "to search the whole table, use Find above. 'line' is the line in the file."),
+                format(nrow(f$rows), big.mark = ","), format(f$total, big.mark = ","))
       } else if (f$total == 0) {
         "No rows found."
       } else {

@@ -152,7 +152,7 @@ Section 5 explains all functions.
 - **Errors, warnings, info, records**: the totals and the records per table.
 - **Essentials**: every EurOBIS record needs a taxon, a position, a date and an occurrenceStatus. Per essential the share of occurrences *without errors* in its fields, also when the value comes from the event above the occurrence. Green: all fine; orange: at least 90 %; red: less; grey: not fully checked, because some of its checks did not run (they are named). Warnings are mentioned but do not lower the share.
 - **Links between tables**: whether every occurrence, measurement and DNA record points to an event or occurrence that exists, every parentEventID to an existing event, and every eventID and occurrenceID is unique. Green: *All links are intact*. Otherwise a red list: which problem, in which table, how many records. These are the most common real errors (section 6, *Links between tables*).
-- **Values and their IDs**: whether every value goes with one ID and every ID with one value: scientificName and scientificNameID, measurementType and measurementTypeID, unit and unitID, value and valueID, institutionCode and institutionID, and so on. Green: *Every value goes with one ID*. Otherwise a list: which pair, in which table, how many records use a less common combination (section 6, *Values and their IDs*).
+- **Values and their IDs**: whether every value goes with one ID and every ID with one value: scientificName and scientificNameID, measurementType and measurementTypeID, unit and unitID, value and valueID, institutionCode and institutionID, and so on. Green: *Every value goes with one ID*. Otherwise one row per value with more than one ID (or ID with more than one value), naming all of them with their records, e.g. *metres: use one measurementUnitID: 123A (40 records) or 123B (3 records)*, and how many records to change (section 6, *Values and their IDs*).
 - **Data checks per table**: one card per table (event, occurrence, eMoF, DNA) with what is wrong, in enough detail to fix it in your own file: the problem, the field, what exactly is wrong, example values next to their correction (e.g. `'21/05/2020' → 2020-05-21`), and the number of records. Problems about whole columns are combined (e.g. *Required column missing: eventDate, decimalLatitude, ...*). No record IDs here: those are on screen 3. Tick *errors*, *warnings*, *info* to choose what is listed (errors first: they block the harvest).
 - **Metadata (EML)**: one line; details on screen 4. For a simple table: a note that a table has no metadata.
 - **About this check**: how many checks had which status, the online lookups (how many answers came from the stored answers), notes from reading the data, the rules workbook used, the version.
@@ -194,7 +194,7 @@ The charts are interactive: **hover** over a bar or point to read its values (in
 
 | Tab | What you see |
 |---|---|
-| Tables | the data itself. Which tables there are, core or extension, how many records, and how they are linked (e.g. *24,125 of 24,125 occurrences are linked to an event*; for the eMoF: how many measurements belong to an occurrence, to an event only, or to nothing). Below: the first 100 rows of a table, or the rows a search finds in the **whole** table: a column *is* a value, *contains* a text (capitals ignored), *is empty*, or a line number of the file (up to 1,000 rows shown). Then the columns of the table: how often each is filled, with examples. |
+| Tables | the data itself. Which tables there are, core or extension, how many records, and how they are linked (e.g. *24,125 of 24,125 occurrences are linked to an event*; for the eMoF: how many measurements belong to an occurrence, to an event only, or to nothing). Below: the rows of a table: all of them up to 100,000 rows (option `qctool.max_table_rows`), so the boxes above the columns filter the whole table; of a bigger table the first 100, and then the boxes only filter those 100. *Find* searches the **whole** table: a column *is* a value, *contains* a text (capitals ignored), *is empty*, or a line number of the file (up to 1,000 rows shown). Then the columns of the table: how often each is filled, with examples. |
 | Time | records per year (or per month for short spans); shaded: the time span in the metadata; dashed: where the middle 95 % of the records lie; records without a valid date and records outside the metadata time span |
 | Taxa | the 20 taxa with most records (orange: a taxonomy check found something) and all taxa with rank, status, accepted name and habitat from WoRMS (from the stored lookups) |
 | Measurements | per measurement type and unit: records, how many are numbers, minimum / median / maximum, examples of text values, the NERC label of the type, the issues |
@@ -251,7 +251,7 @@ result <- qc_check(input,           # zip, folder, IPT/GBIF/OBIS address, link t
 | `qc_record(result, "occurrence", 12)` | one record: values, issues (also of its events), events above it, measurements |
 | `qc_essentials(result)` | the essentials table |
 | `qc_links(result)` | the links between tables: broken links per check and table |
-| `qc_one_to_one(result)` | values and their IDs: records with a less common combination per check and table |
+| `qc_one_to_one(result)` | values and their IDs: one row per value with several IDs (or ID with several values), all of them with their records |
 | `qc_fair(result)` | FAIR per letter, and per check |
 | `qc_map_points(result)` | positions with problems, and the others (as tables) |
 
@@ -317,6 +317,7 @@ Settings of the tool itself (not of the checks: those are in the rules workbook)
 | `qctool.max_unzipped_mb` | Inf (no limit) | largest archive after unzipping (MB). A server open to everyone should set one: a small zip can unpack to many GB |
 | `qctool.max_upload_mb` | 3000 | largest file uploaded in the app (MB); also `qc_app(max_upload_mb = )` |
 | `qctool.block_private_addresses` | FALSE | TRUE: refuse web addresses on the server's own network (localhost, 10.x, 192.168.x, ...). For a public server |
+| `qctool.max_table_rows` | 100000 | Explore > Tables: a table up to this many rows is shown whole, so the filters above its columns search all rows; a bigger one shows its first 100 rows |
 
 ---
 
@@ -364,7 +365,7 @@ All of them are errors, and all of them are listed together on the Overview unde
 
 ### Values and their IDs
 
-Many values come with an ID that says the same in a fixed form: the scientificName with its scientificNameID, the measurementType with its measurementTypeID, and so on. In the whole dataset they must go **one-to-one**: one value, one ID, and one ID, one value. The tool counts every combination and reports the records that use a less common one; the suggestion is the combination most records use. Empty values are left out.
+Many values come with an ID that says the same in a fixed form: the scientificName with its scientificNameID, the measurementType with its measurementTypeID, and so on. In the whole dataset they must go **one-to-one**: one value, one ID, and one ID, one value. The tool counts every combination. Each value with more than one ID is **one problem**, which names all its IDs with their number of records, the most used first: value *metres*, suggestion *use one measurementUnitID: 123A (40 records) or 123B (3 records)*. Its records are those with a less common ID (here the 3 with 123B), the ones to change. The same for an ID with more than one value. Empty values are left out.
 
 | What is wrong (example) | Reported by | Severity |
 |---|---|---|
@@ -609,6 +610,8 @@ FIFD (43k events, 8.2 million occurrences, 33.8 million measurements): reading a
 | Strange characters (Ã©, or ± shown oddly) | the file is not UTF-8 | the check *Broken characters (text not valid UTF-8)* reports it, with a repaired suggestion; save the file as UTF-8 |
 | The app goes grey: "The connection to R was lost" | the browser lost its connection to R (a server that closes quiet connections, a laptop that slept, or something that could not be sent to the browser) | the app has stopped and R is free: run `qc_app()` again and reload the page. If it happens with one particular file, please send that file to whoever maintains the tool |
 | A column of a table is not used | no term was chosen for it | choose the term in the mapping on screen 1 |
+| The box above a column cannot be used (grey) | in the rows of this table the column has only one value (or is empty), so there is nothing to filter | in Explore > Tables of a table over 100,000 rows only its first 100 rows are shown: search the whole table with *Find*, or raise the option `qctool.max_table_rows` |
+| A value with two IDs: which IDs are they? | the records of such a problem are only those with a less common ID | its suggestion names all the IDs with their records; all such values at once: Overview, *Values and their IDs* |
 
 ---
 

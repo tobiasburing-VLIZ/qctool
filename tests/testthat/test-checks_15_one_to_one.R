@@ -16,7 +16,8 @@ test_that("scientificname_id_one_to_one: one name with two IDs, one ID with two 
   two_names <- issues[grepl("several scientificNames", message)]
   expect_equal(two_names$line, 6L)                                  # with the author
   expect_equal(two_names$severity_hint, "warning")
-  expect_match(two_names$suggestion, "Abra alba$")
+  expect_equal(two_names$value, lsid(141433))                       # the ID with two names
+  expect_equal(two_names$suggestion, "use one scientificName: Abra alba (3 records) or Abra alba Wood, 1802 (1 record)")
 
   expect_equal(issues[message == "scientificNameID is empty, while other records with this scientificName have one", suggestion], lsid(141433))
   expect_equal(issues[message == "scientificName is empty, while other records with this scientificNameID have one", suggestion], "Abra alba")
@@ -71,11 +72,29 @@ test_that("values_and_ids_one_to_one uses the pairs of the reference list", {
   expect_match(organisms$message, "same organismID goes with several scientificNames")
 })
 
-test_that("qc_one_to_one shows each check once, with the severity found", {
-  result <- qc_check(make_archive(occurrence = data.frame(
-    id = c("O1", "O2"), occurrenceID = c("O1", "O2"), scientificName = c("Abra alba", "Abra alba Wood"),
-    scientificNameID = lsid(141433))), online = FALSE)
-  short <- qc_one_to_one(result)
-  expect_equal(short[check_id == "scientificname_id_one_to_one", severity], "warning")
-  expect_true(short[check_id == "scientificname_id_one_to_one", records] == 1)
+test_that("qc_one_to_one: one row per value with several IDs, naming all of them", {
+  # 'metres' with unit ID 123A in 40 records and 123B in 3; 123A also with 'm' (3 records)
+  n <- 46
+  result <- qc_check(make_archive(
+    event = data.frame(id = "E1", eventID = "E1"),
+    occurrence = data.frame(id = "E1", occurrenceID = paste0("O", 1:n)),
+    emof = data.frame(id = "E1", occurrenceID = paste0("O", 1:n), measurementType = "depth", measurementValue = as.character(1:n),
+                      measurementUnit = c(rep("metres", 43), rep("m", 3)),
+                      measurementUnitID = c(rep("123A", 40), rep("123B", 3), rep("123A", 3)))),
+    checks = c("measurementunit_id_one_to_one", "scientificname_id_one_to_one"), online = FALSE)
+  conflicts <- qc_one_to_one(result)
+  expect_equal(conflicts$value, c("metres", "123A"))                  # the error first
+  expect_equal(conflicts$severity, c("error", "warning"))
+  expect_equal(conflicts$suggestion, c("use one measurementUnitID: 123A (40 records) or 123B (3 records)",
+                                       "use one measurementUnit: metres (40 records) or m (3 records)"))
+  expect_equal(conflicts$records, c(3L, 3L))                          # those with the less common one
+  expect_equal(qc_issues(result, problem = 1)$line, 42:44)            # the 123B records
+
+  expect_equal(nrow(qc_one_to_one(qc_check(make_archive(occurrence = data.frame(id = "O1", occurrenceID = "O1")), online = FALSE))), 0)
+})
+
+test_that("partner_list: most used first, 'record' for one, at most five", {
+  expect_equal(partner_list("A", 2), "A (2 records)")
+  expect_equal(partner_list(c("A", "B"), c(1200, 1)), "A (1,200 records) or B (1 record)")
+  expect_equal(partner_list(LETTERS[1:7], 7:1), "A (7 records), B (6 records), C (5 records), D (4 records), E (3 records) and 2 more")
 })

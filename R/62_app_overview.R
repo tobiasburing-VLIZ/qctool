@@ -139,7 +139,7 @@ value_examples <- function(values, suggestions, records, n = 3) {
   shown <- seq_len(min(n, length(values)))
   quoted <- ifelse(grepl("^'", values[shown]), shorten(values[shown], 70), sprintf("'%s'", shorten(values[shown], 70)))
   text <- ifelse(is.na(suggestions[shown]) | !nzchar(suggestions[shown]), quoted,
-                 sprintf("%s → %s", quoted, shorten(suggestions[shown], 90)))
+                 sprintf("%s → %s", quoted, shorten(suggestions[shown], 200)))   # long enough for a list of IDs in use
   more <- length(values) - length(shown)
   paste0(paste(text, collapse = "; "), if (more > 0) sprintf(" (and %s more)", format(more, big.mark = ",")) else "")
 }
@@ -176,15 +176,34 @@ links_section <- function(r) {
 }
 
 # Values and their IDs: one scientificName with two scientificNameIDs, one
-# measurementType with two measurementTypeIDs, ... Right under the links.
+# measurementType with two measurementTypeIDs, ... Right under the links. Each
+# conflict is one row, with all the IDs (or values) in use and their records,
+# so it is seen at once which ones they are.
 one_to_one_section <- function(r) {
-  short_checks_section(
-    qc_one_to_one(r), heading = "Values and their IDs",
-    intro = c("A value and its ID go one-to-one: each scientificName has one scientificNameID, each measurementType one",
-              "measurementTypeID, each unit one unitID, and the other way round. One value with two IDs means one ID is",
-              "wrong; one ID with two values is usually a spelling difference."),
-    all_fine = "Every value goes with one ID.", records_column = "records with a less common combination",
-    where = "The records, with the combination most records use as suggestion: screen 3 (Data issues), the table named here.")
+  short <- checks_in_short(r, one_to_one_check_ids)
+  if (!nrow(short)) return(NULL)
+  heading <- shiny::h4(class = "mt-4", "Values and their IDs")
+  intro <- shiny::p(class = "text-muted", "A value and its ID go one-to-one: each scientificName has one scientificNameID,",
+                    "each measurementType one measurementTypeID, each unit one unitID, and the other way round.",
+                    "One value with two IDs means one ID is wrong; one ID with two values is usually a spelling difference.")
+  fine <- unique(short[records == 0, problem])
+  checked <- shiny::p(class = "small text-muted mb-0", sprintf("Checked and fine (%d): %s.", length(fine), paste(fine, collapse = "; ")))
+  conflicts <- qc_one_to_one(r)
+  if (!nrow(conflicts)) {
+    return(shiny::tagList(heading, intro, alert(shiny::tagList(shiny::strong("Every value goes with one ID."), " ", checked), "success")))
+  }
+  shown <- conflicts[, .(severity, table = table_label(table), fields = gsub("; ", " and ", fields, fixed = TRUE),
+                         value = shorten(value, 100), `what is wrong` = sub(";.*$", "", message),
+                         suggestion, `records to change` = prettyNum(records, big.mark = ","))]
+  shiny::tagList(
+    heading, intro,
+    bslib::card(class = if ("error" %in% conflicts$severity) "border-danger" else "border-warning", bslib::card_body(
+      shiny::p(class = "mb-2", sprintf("%s %s with more than one partner:", prettyNum(nrow(conflicts), big.mark = ","),
+                                       if (nrow(conflicts) == 1) "value or ID" else "values or IDs")),
+      colour_severity(plain_table(shown, 10)),
+      shiny::p(class = "small text-muted mt-2 mb-1", "'Records to change' are those with a less common partner.",
+               "They are listed on screen 3 (Data issues), in the table named here."),
+      if (length(fine)) checked)))
 }
 
 # A heading, a short text and the result of some checks: green when all are

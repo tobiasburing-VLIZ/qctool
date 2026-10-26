@@ -113,7 +113,10 @@ test_that("overview: values with several IDs are shown under the links", {
     scientificNameID = paste0("urn:lsid:marinespecies.org:taxname:", c(141433, 141433, 14143)))), online = FALSE)
   shiny::testServer(overview_server, args = list(result = shiny::reactiveVal(mixed)), {
     expect_match(output$top$html, "Values and their IDs")
-    expect_match(output$top$html, "scientificName and scientificNameID do not go one-to-one")
+    expect_match(output$top$html, "use one scientificNameID: urn:lsid:marinespecies.org:taxname:141433 (2 records) or", fixed = TRUE)
+  })
+  shiny::testServer(overview_server, args = list(result = shiny::reactiveVal(app_test_result())), {
+    expect_match(output$top$html, "Every value goes with one ID")
   })
 })
 
@@ -162,11 +165,15 @@ test_that("explore > tables: the tables, the first rows, and a search in the who
   shiny::testServer(tables_server, args = list(result = shiny::reactiveVal(app_test_result())), {
     expect_match(output$structure$html, "occurrences are linked to an event")
     session$setInputs(table = "occurrence")
-    expect_match(output$rows_note$html, "The first 2 of 2 rows")
+    expect_match(output$rows_note$html, "All 2 rows. The boxes above the columns filter them")
     session$setInputs(column = "occurrenceID", how = "is", value = "O2", find = 1)
     expect_match(output$rows_note$html, "1 rows found")
     expect_equal(found()$rows$occurrenceID, "O2")
   })
+  # A table bigger than the option qctool.max_table_rows: only its first 100 rows.
+  expect_equal(rows_shown_at_start(app_test_result(), "occurrence"), 2)
+  withr::local_options(qctool.max_table_rows = 1)
+  expect_equal(rows_shown_at_start(app_test_result(), "occurrence"), rows_shown_first)
 })
 
 test_that("map: problem points and the others", {

@@ -174,7 +174,9 @@ web_links <- function(data) {
   link_columns <- names(data)[vapply(data, has_link, logical(1))]
   for (column in link_columns) {
     x <- data[[column]]
-    shown <- linkify(htmltools::htmlEscape(x))
+    # Each different value once: a column of 90,000 rows often has a handful of addresses.
+    values <- unique(x)
+    shown <- linkify(htmltools::htmlEscape(values))[chmatch(x, values)]
     shown[is.na(x)] <- NA_character_
     data[[column]] <- shown
   }
@@ -185,7 +187,20 @@ web_links <- function(data) {
 # stays outside the link; an address cut short ('…') is left as text.
 linkify <- function(text) {
   # An address ends at a space, a quote, or an escaped < > " ' (&lt; &gt; &quot; &#39;).
-  found <- gregexpr("https?://(?:(?!&lt;|&gt;|&quot;|&#39;)[^[:space:]<>\"'])+", text, perl = TRUE)
+  address_pattern <- "https?://(?:(?!&lt;|&gt;|&quot;|&#39;)[^[:space:]<>\"'])+"
+  # Quick, for all cells at once: a cell that is one address and nothing else (most columns with links).
+  whole <- grepl(paste0("^", address_pattern, "$"), text, perl = TRUE) & !grepl("…", text, fixed = TRUE)
+  tail <- sub("^.*?([.,;:)\\]]*)$", "\\1", text[whole], perl = TRUE)
+  address <- substr(text[whole], 1, nchar(text[whole]) - nchar(tail))
+  text[whole] <- sprintf('<a href="%s" target="_blank" rel="noopener">%s</a>%s', address, address, tail)
+  # Addresses inside a longer text: one cell at a time.
+  rest <- which(!whole & grepl("https?://", text))
+  text[rest] <- linkify_in_text(text[rest], address_pattern)
+  text
+}
+
+linkify_in_text <- function(text, address_pattern) {
+  found <- gregexpr(address_pattern, text, perl = TRUE)
   regmatches(text, found) <- lapply(regmatches(text, found), function(urls) {
     if (!length(urls)) return(urls)
     tail <- ifelse(grepl("[.,;:)\\]]+$", urls, perl = TRUE), sub("^.*?([.,;:)\\]]+)$", "\\1", urls, perl = TRUE), "")

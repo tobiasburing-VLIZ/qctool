@@ -92,7 +92,7 @@ issues_server <- function(id, result) {
     output$problems <- DT::renderDT({
       titles <- titles_of_checks(result())
       shown <- problems()[, .(severity, problem = titles[check_id], field, value = shorten(value, 80),
-                              `what is wrong` = message, suggestion = shorten(suggestion, 80), records)]
+                              `what is wrong` = message, suggestion = shorten(suggestion, 200), records)]   # 200: room for all IDs in use
       colour_severity(filter_table(shown, dropdowns = c("severity", "problem", "field")))
     })
 
