@@ -1,6 +1,6 @@
 # Appendix: the check catalogue
 
-Made from the rules workbook on 2026-10-25 by `dev/write_check_catalogue.R`: 161 checks, 144 implemented.
+Made from the rules workbook on 2026-10-26 by `dev/write_check_catalogue.R`: 161 checks, 144 implemented.
 In the app: Help > Checks (with search). In R: `qc_checks("words")`.
 
 ## Files and columns
@@ -123,11 +123,11 @@ In the app: Help > Checks (with search). In R: `qc_checks("words")`.
 |---|---|---|---|
 | **AphiaID is not the accepted name** (`aphiaid_accepted`) | warning | Unaccepted, deleted or quarantined AphiaIDs are reported together with the accepted name. | WoRMS |
 | **AphiaID not found in WoRMS** (`scientificnameid_exists_in_worms`) | error | The AphiaID in scientificNameID exists in WoRMS. | WoRMS |
+| **Broken one-to-one: scientificName and scientificNameID** (`scientificname_id_one_to_one`) | error | Each scientificName has one scientificNameID and each scientificNameID one scientificName, in the whole dataset. Records with a name but no ID (or an ID but no name) are reported when other records of that name (ID) have one, with it as suggestion. |  |
 | **Higher classification differs from WoRMS** (`classification_matches_worms`) *not built yet* | warning | kingdom, phylum, class, order, family and genus in the data agree with WoRMS for that AphiaID. | WoRMS |
 | **Name without a WoRMS ID (ID suggested)** (`names_without_id_matched`) | info | For records without scientificNameID, looks up the name in WoRMS and suggests a match. | WoRMS |
 | **Not identified to family level or lower** (`taxon_identified_to_family_or_lower`) | warning | Records identified only above family level (class, phylum, kingdom) are reported. | WoRMS |
 | **Taxon is not marine or brackish** (`taxon_is_marine`) | warning | Reports taxa that WoRMS lists as freshwater-only or terrestrial-only. | WoRMS |
-| **scientificName and scientificNameID do not go one-to-one** (`scientificname_id_one_to_one`) | error | Each scientificName has one scientificNameID and each scientificNameID one scientificName, in the whole dataset. Records with a name but no ID (or an ID but no name) are reported when other records of that name (ID) have one, with it as suggestion. |  |
 | **scientificName contains more than the name** (`scientificname_clean`) | warning | scientificName holds no qualifiers (cf., aff., sp., spp., ?) and no extra words. Use identificationQualifier and scientificNameAuthorship for these. For DNA data also: underscores ('Candidatus_Nitrosopelagicus'), 'uncultured', 'unculturable', 'environmental sample', 'metagenome'. |  |
 | **scientificName does not match the AphiaID** (`scientificname_matches_aphiaid`) | error | scientificName equals the WoRMS name of that AphiaID, ignoring authorship. Small differences (up to 5 characters) give a warning, larger ones an error. | WoRMS |
 | **scientificNameID is not a WoRMS LSID** (`scientificnameid_worms_format`) | error | scientificNameID has the form urn:lsid:marinespecies.org:taxname:<number>. |  |
@@ -136,6 +136,9 @@ In the app: Help > Checks (with search). In R: `qc_checks("words")`.
 
 | Check | Severity | What | Online |
 |---|---|---|---|
+| **Broken one-to-one: measurementType and measurementTypeID** (`measurementtype_id_one_to_one`) | error | Each measurementType text goes with one measurementTypeID, and each measurementTypeID with one measurementType text, in the whole dataset. |  |
+| **Broken one-to-one: measurementUnit and measurementUnitID** (`measurementunit_id_one_to_one`) | error | Each measurementUnit text goes with one measurementUnitID, and each measurementUnitID with one measurementUnit text, in the whole dataset. |  |
+| **Broken one-to-one: measurementValue and measurementValueID** (`measurementvalueid_consistent`) | error | Within a measurement type, the same measurementValue always has the same measurementValueID, and the same measurementValueID the same measurementValue. Measured numbers have no measurementValueID: one ID for different numbers is reported. |  |
 | **Count given twice (individualCount and eMoF)** (`individualcount_also_in_emof`) | warning | An occurrence does not have both individualCount and an eMoF count (OCOUNT01) with different values. |  |
 | **Counts without a sample size** (`sample_size_with_counts`) *not built yet* | warning | When counts or abundances are given, a sample size or effort is also given. |  |
 | **Deprecated vocabulary term** (`vocabulary_terms_not_deprecated`) | warning | measurementTypeID, measurementUnitID and measurementValueID are not deprecated. Suggests the replacement term. | NERC Vocabulary Server |
@@ -148,15 +151,12 @@ In the app: Help > Checks (with search). In R: `qc_checks("words")`.
 | **Several units for one measurement type** (`unit_consistent_per_type`) | warning | The same measurementTypeID (or measurementType) uses one unit throughout the dataset. |  |
 | **Unit does not fit the measurement type** (`type_unit_compatible`) | error | measurementUnitID is one of the units that NERC links to that P01 measurementTypeID. | NERC Vocabulary Server |
 | **Unit text does not match the unit ID** (`unit_text_matches_unitid`) | error | measurementUnit (text) means the same as the NERC label of measurementUnitID, e.g. not 'ind L-1' with an ID for 'per cubic metre'. | NERC Vocabulary Server |
-| **Value and value ID do not go one-to-one** (`measurementvalueid_consistent`) | warning | Within a measurement type, the same measurementValue always has the same measurementValueID, and the same measurementValueID the same measurementValue. Measured numbers have no measurementValueID: one ID for different numbers is reported. |  |
 | **Value not numeric although a unit is given** (`value_numeric_when_unit`) | warning | When measurementUnit is filled, measurementValue is a number. |  |
 | **Vocabulary URI malformed** (`nvs_uri_format`) | warning | NERC URIs have the form http://vocab.nerc.ac.uk/collection/<collection>/current/<code>/ : http (not https), '/current/', trailing slash, no spaces. |  |
 | **Zero abundance or biomass for a present taxon** (`zero_quantity_with_presence`) | warning | An occurrence with occurrenceStatus 'present' has no quantity (abundance, biomass, count, individualCount, organismQuantity) equal to 0. |  |
-| **measurementType and measurementTypeID do not go one-to-one** (`measurementtype_id_one_to_one`) | error | Each measurementType text goes with one measurementTypeID, and each measurementTypeID with one measurementType text, in the whole dataset. |  |
 | **measurementType text does not fit the measurementTypeID** (`measurementtype_matches_typeid`) | info | The measurementType text is similar to the NERC label of the ID. Also catches typos such as 'Weigth'. | NERC Vocabulary Server |
 | **measurementTypeID empty** (`measurementtypeid_filled`) | warning | Every measurementType has a measurementTypeID (NERC P01 or another vocabulary). Occurrence-linked and event-linked records are reported in one list. |  |
 | **measurementTypeID not found in NERC** (`measurementtypeid_valid`) | error | measurementTypeID is an existing term in the NERC Vocabulary Server. | NERC Vocabulary Server |
-| **measurementUnit and measurementUnitID do not go one-to-one** (`measurementunit_id_one_to_one`) | error | Each measurementUnit text goes with one measurementUnitID, and each measurementUnitID with one measurementUnit text, in the whole dataset. |  |
 | **measurementUnitID empty although a unit is given** (`measurementunitid_filled`) | warning | Every filled measurementUnit has a measurementUnitID (NERC P06). |  |
 | **measurementUnitID not found in NERC P06** (`measurementunitid_valid`) | error | measurementUnitID is an existing P06 unit. | NERC Vocabulary Server |
 | **measurementValueID not found in NERC** (`measurementvalueid_valid`) | error | measurementValueID is an existing NERC term. | NERC Vocabulary Server |
@@ -175,7 +175,7 @@ In the app: Help > Checks (with search). In R: `qc_checks("words")`.
 
 | Check | Severity | What | Online |
 |---|---|---|---|
-| **Other values and their IDs do not go one-to-one** (`values_and_ids_one_to_one`) | warning | The pairs of fields in reference/one_to_one_pairs.csv go one-to-one in every table that has both: institutionCode and institutionID, collectionCode and collectionID, datasetName and datasetID, recordedBy and recordedByID, identifiedBy and identifiedByID, country and countryCode, higherGeography and higherGeographyID, scientificName and taxonID. Pairs marked 'one way' only need one value per ID: locationID and locality, organismID and scientificName, and in an occurrence core eventID and eventDate / decimalLatitude / decimalLongitude. |  |
+| **Broken one-to-one: other values and their IDs** (`values_and_ids_one_to_one`) | error | The pairs of fields in reference/one_to_one_pairs.csv go one-to-one in every table that has both: institutionCode and institutionID, collectionCode and collectionID, datasetName and datasetID, recordedBy and recordedByID, identifiedBy and identifiedByID, country and countryCode, higherGeography and higherGeographyID, scientificName and taxonID. Pairs marked 'one way' only need one value per ID: locationID and locality, organismID and scientificName, and in an occurrence core eventID and eventDate / decimalLatitude / decimalLongitude. |  |
 | **dynamicProperties is not valid JSON** (`dynamicproperties_json`) | warning | If dynamicProperties is filled, it is valid JSON. |  |
 | **individualCount is not a whole number** (`individualcount_valid`) | warning | individualCount is a whole number of 0 or more. |  |
 | **organismQuantity without a type** (`organismquantity_with_type`) | warning | organismQuantity and organismQuantityType are either both filled or both empty. |  |
@@ -363,10 +363,10 @@ lists it reads. Lists in `reference/` are the CSV files in `inst/reference/` (ma
 |---|---|---|---|
 | AphiaID is not the accepted name (`aphiaid_accepted`) | `R/checks_08_taxonomy.R` |  |  |
 | AphiaID not found in WoRMS (`scientificnameid_exists_in_worms`) | `R/checks_08_taxonomy.R` |  |  |
+| Broken one-to-one: scientificName and scientificNameID (`scientificname_id_one_to_one`) | `R/checks_15_one_to_one.R` |  |  |
 | Name without a WoRMS ID (ID suggested) (`names_without_id_matched`) | `R/checks_08_taxonomy.R` |  |  |
 | Not identified to family level or lower (`taxon_identified_to_family_or_lower`) | `R/checks_08_taxonomy.R` | `lowest_rank = family` |  |
 | Taxon is not marine or brackish (`taxon_is_marine`) | `R/checks_08_taxonomy.R` |  |  |
-| scientificName and scientificNameID do not go one-to-one (`scientificname_id_one_to_one`) | `R/checks_15_one_to_one.R` |  |  |
 | scientificName contains more than the name (`scientificname_clean`) | `R/checks_08_taxonomy.R` |  | reference/name_patterns.csv |
 | scientificName does not match the AphiaID (`scientificname_matches_aphiaid`) | `R/checks_08_taxonomy.R` | `max_distance = 5` |  |
 | scientificNameID is not a WoRMS LSID (`scientificnameid_worms_format`) | `R/checks_08_taxonomy.R` |  |  |
@@ -375,6 +375,9 @@ lists it reads. Lists in `reference/` are the CSV files in `inst/reference/` (ma
 
 | Check | Code | Settings | Values from |
 |---|---|---|---|
+| Broken one-to-one: measurementType and measurementTypeID (`measurementtype_id_one_to_one`) | `R/checks_15_one_to_one.R` |  |  |
+| Broken one-to-one: measurementUnit and measurementUnitID (`measurementunit_id_one_to_one`) | `R/checks_15_one_to_one.R` |  |  |
+| Broken one-to-one: measurementValue and measurementValueID (`measurementvalueid_consistent`) | `R/checks_09_emof.R` |  |  |
 | Count given twice (individualCount and eMoF) (`individualcount_also_in_emof`) | `R/checks_09_emof.R` |  |  |
 | Deprecated vocabulary term (`vocabulary_terms_not_deprecated`) | `R/checks_09_emof_nerc.R` |  |  |
 | Fact without a value ID, or measurement without a unit (`value_has_id_or_unit`) | `R/checks_09_emof.R` |  |  |
@@ -385,15 +388,12 @@ lists it reads. Lists in `reference/` are the CSV files in `inst/reference/` (ma
 | Several units for one measurement type (`unit_consistent_per_type`) | `R/checks_09_emof.R` |  |  |
 | Unit does not fit the measurement type (`type_unit_compatible`) | `R/checks_09_emof_nerc.R` |  |  |
 | Unit text does not match the unit ID (`unit_text_matches_unitid`) | `R/checks_09_emof_nerc.R` |  | reference/unit_synonyms.csv |
-| Value and value ID do not go one-to-one (`measurementvalueid_consistent`) | `R/checks_09_emof.R` |  |  |
 | Value not numeric although a unit is given (`value_numeric_when_unit`) | `R/checks_09_emof.R` |  |  |
 | Vocabulary URI malformed (`nvs_uri_format`) | `R/checks_09_emof.R` |  |  |
 | Zero abundance or biomass for a present taxon (`zero_quantity_with_presence`) | `R/checks_09_emof.R` |  | reference/nerc_quantity_terms.csv |
-| measurementType and measurementTypeID do not go one-to-one (`measurementtype_id_one_to_one`) | `R/checks_15_one_to_one.R` |  |  |
 | measurementType text does not fit the measurementTypeID (`measurementtype_matches_typeid`) | `R/checks_09_emof_nerc.R` |  |  |
 | measurementTypeID empty (`measurementtypeid_filled`) | `R/checks_09_emof.R` |  |  |
 | measurementTypeID not found in NERC (`measurementtypeid_valid`) | `R/checks_09_emof_nerc.R` |  |  |
-| measurementUnit and measurementUnitID do not go one-to-one (`measurementunit_id_one_to_one`) | `R/checks_15_one_to_one.R` |  |  |
 | measurementUnitID empty although a unit is given (`measurementunitid_filled`) | `R/checks_09_emof.R` |  |  |
 | measurementUnitID not found in NERC P06 (`measurementunitid_valid`) | `R/checks_09_emof_nerc.R` |  |  |
 | measurementValueID not found in NERC (`measurementvalueid_valid`) | `R/checks_09_emof_nerc.R` |  |  |
@@ -412,7 +412,7 @@ lists it reads. Lists in `reference/` are the CSV files in `inst/reference/` (ma
 
 | Check | Code | Settings | Values from |
 |---|---|---|---|
-| Other values and their IDs do not go one-to-one (`values_and_ids_one_to_one`) | `R/checks_15_one_to_one.R` |  | reference/one_to_one_pairs.csv |
+| Broken one-to-one: other values and their IDs (`values_and_ids_one_to_one`) | `R/checks_15_one_to_one.R` |  | reference/one_to_one_pairs.csv |
 | dynamicProperties is not valid JSON (`dynamicproperties_json`) | `R/checks_11_other.R` |  |  |
 | individualCount is not a whole number (`individualcount_valid`) | `R/checks_11_other.R` |  |  |
 | organismQuantity without a type (`organismquantity_with_type`) | `R/checks_11_other.R` |  |  |

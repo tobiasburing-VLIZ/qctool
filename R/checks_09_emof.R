@@ -158,14 +158,25 @@ check_measurementvalueid_consistent <- function(dataset, settings) {
                  first_row = row[1]), by = .(type, value_id)]
   numbers <- numbers[n_values > 1]
   number_types <- type_text(data[numbers$first_row])
+  # Text values: one valueID per value and one value per valueID, within a type.
+  text_values <- one_to_one_issues(dataset, name, "measurementValue", "measurementValueID", within = types, only = !is_number,
+                                   within_text = function(rows) type_text(data[rows]))
+  # The numbers with one valueID, in the table of combinations: one row per valueID and type.
+  groups <- !duplicated(numbers[, .(type, value_id)])
+  if (any(groups)) {
+    remember_pair(dataset, name, "measurementValue", "measurementValueID", add = TRUE, data.table(
+      conflict = sprintf("within %s: measurementValueID '%s' is used for %s different numbers", number_types[groups],
+                         numbers$value_id[groups], prettyNum(numbers$n_values[groups], big.mark = ",")),
+      field = "measurementValueID", value = numbers$value_id[groups], other_field = "measurementValue",
+      other_value = sprintf("%s different numbers (%s, ...)", prettyNum(numbers$n_values[groups], big.mark = ","), numbers$examples[groups]),
+      records = numbers[, .N, by = .(type, value_id)]$N, less_common = TRUE, within_group = number_types[groups]))
+  }
   combine_issues(list(
     new_issues(dataset, name, without_id$row, field = "measurementValueID", value = without_id$value,
                message = "The same value has a measurementValueID in other records but not here",
-               suggestion = without_id$usual_id),
-    # Text values: one valueID per value and one value per valueID, within a type.
-    one_to_one_issues(dataset, name, "measurementValue", "measurementValueID", within = types, only = !is_number,
-                      within_text = function(rows) type_text(data[rows])),
-    new_issues(dataset, name, numbers$row, field = "measurementValueID", value = numbers$value_id,
+               suggestion = without_id$usual_id, severity_hint = "warning"),
+    text_values,
+    new_issues(dataset, name, numbers$row, field = "measurementValueID; measurementValue", value = numbers$value_id,
                message = "The same measurementValueID is used for different measured numbers",
                suggestion = sprintf(paste("within %s: used for %s different numbers (%s, ...). A measurementValueID stands for one",
                                           "value from a vocabulary (e.g. 'adult'): leave it empty for measured numbers, or move",

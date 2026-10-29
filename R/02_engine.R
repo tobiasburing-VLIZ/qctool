@@ -104,7 +104,8 @@ run_checks <- function(plan, dataset, rules, check_functions, progress = FALSE) 
   issues <- combine_issues(issues_per_check)
   if (!nrow(issues$problems)) issues$problems <- apply_severity(empty_problems(), character(), character())
   list(checks = rbindlist(check_rows), problems = issues$problems, rows = issues$rows,
-       lookups = lookup_summary(dataset))
+       lookups = lookup_summary(dataset),
+       one_to_one = remembered_pairs(dataset))   # this run's cache is gone after the run: keep these
 }
 
 # Run one check and turn whatever happens into a status.

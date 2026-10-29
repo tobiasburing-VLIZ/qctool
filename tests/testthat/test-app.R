@@ -113,10 +113,32 @@ test_that("overview: values with several IDs are shown under the links", {
     scientificNameID = paste0("urn:lsid:marinespecies.org:taxname:", c(141433, 141433, 14143)))), online = FALSE)
   shiny::testServer(overview_server, args = list(result = shiny::reactiveVal(mixed)), {
     expect_match(output$top$html, "Values and their IDs")
-    expect_match(output$top$html, "use one scientificNameID: urn:lsid:marinespecies.org:taxname:141433 (2 records) or", fixed = TRUE)
+    expect_match(output$top$html, "1 broken relationship, every combination next to each other")
+    expect_match(output$top$html, "scientificName 'Abra alba' has 2 different scientificNameIDs", fixed = TRUE)
+    expect_match(output$top$html, "less common: change")
   })
-  shiny::testServer(overview_server, args = list(result = shiny::reactiveVal(app_test_result())), {
-    expect_match(output$top$html, "Every value goes with one ID")
+  fine <- qc_check(make_archive(
+    event = data.frame(id = "E1", eventID = "E1"),
+    occurrence = data.frame(id = "E1", eventID = "E1", occurrenceID = c("O1", "O2"), scientificName = "Abra alba",
+                            scientificNameID = "urn:lsid:marinespecies.org:taxname:141433")), online = FALSE)
+  shiny::testServer(overview_server, args = list(result = shiny::reactiveVal(fine)), {
+    expect_match(output$top$html, "Every value goes with one ID, and every ID with one value")
+    expect_match(output$top$html, "Compared: Occurrence: scientificName and scientificNameID")
+    expect_false(grepl("do not go one-to-one", output$top$html))      # no titles of problems in the list of what is fine
+    expect_match(output$top$html, "Checked: every record points to an existing event or occurrence")
+  })
+})
+
+test_that("issues: a broken one-to-one problem shows all combinations of its value", {
+  mixed <- qc_check(make_archive(occurrence = data.frame(
+    id = c("O1", "O2", "O3"), occurrenceID = c("O1", "O2", "O3"), scientificName = "Abra alba",
+    scientificNameID = paste0("urn:lsid:marinespecies.org:taxname:", c(141433, 141433, 14143)))), online = FALSE)
+  shiny::testServer(issues_server, args = list(result = shiny::reactiveVal(mixed)), {
+    session$setInputs(table = "occurrence", severity = c("error", "warning", "info"), check = "scientificname_id_one_to_one")
+    session$setInputs(problems_rows_selected = 1)
+    expect_match(output$combinations$html, "All combinations in this table")
+    expect_match(output$combinations$html, "taxname:14143\"", fixed = TRUE)
+    expect_match(output$combinations$html, "less common: these records are listed below")
   })
 })
 

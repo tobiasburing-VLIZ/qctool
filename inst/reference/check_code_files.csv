@@ -21,6 +21,9 @@ duplicate_emof_records,R/checks_10_duplicates.R
 duplicate_occurrences,R/checks_10_duplicates.R
 duplicate_type_per_event,R/checks_10_duplicates.R
 duplicate_type_per_occurrence,R/checks_10_duplicates.R
+measurementtype_id_one_to_one,R/checks_15_one_to_one.R
+measurementunit_id_one_to_one,R/checks_15_one_to_one.R
+measurementvalueid_consistent,R/checks_09_emof.R
 individualcount_also_in_emof,R/checks_09_emof.R
 vocabulary_terms_not_deprecated,R/checks_09_emof_nerc.R
 value_has_id_or_unit,R/checks_09_emof.R
@@ -31,15 +34,12 @@ sampling_instrument_present,R/checks_09_emof.R
 unit_consistent_per_type,R/checks_09_emof.R
 type_unit_compatible,R/checks_09_emof_nerc.R
 unit_text_matches_unitid,R/checks_09_emof_nerc.R
-measurementvalueid_consistent,R/checks_09_emof.R
 value_numeric_when_unit,R/checks_09_emof.R
 nvs_uri_format,R/checks_09_emof.R
 zero_quantity_with_presence,R/checks_09_emof.R
-measurementtype_id_one_to_one,R/checks_15_one_to_one.R
 measurementtype_matches_typeid,R/checks_09_emof_nerc.R
 measurementtypeid_filled,R/checks_09_emof.R
 measurementtypeid_valid,R/checks_09_emof_nerc.R
-measurementunit_id_one_to_one,R/checks_15_one_to_one.R
 measurementunitid_filled,R/checks_09_emof.R
 measurementunitid_valid,R/checks_09_emof_nerc.R
 measurementvalueid_valid,R/checks_09_emof_nerc.R
@@ -127,10 +127,10 @@ field_datatype_valid,R/checks_01_structure.R
 field_length_within_eurobis_limit,R/checks_01_structure.R
 aphiaid_accepted,R/checks_08_taxonomy.R
 scientificnameid_exists_in_worms,R/checks_08_taxonomy.R
+scientificname_id_one_to_one,R/checks_15_one_to_one.R
 names_without_id_matched,R/checks_08_taxonomy.R
 taxon_identified_to_family_or_lower,R/checks_08_taxonomy.R
 taxon_is_marine,R/checks_08_taxonomy.R
-scientificname_id_one_to_one,R/checks_15_one_to_one.R
 scientificname_clean,R/checks_08_taxonomy.R
 scientificname_matches_aphiaid,R/checks_08_taxonomy.R
 scientificnameid_worms_format,R/checks_08_taxonomy.R

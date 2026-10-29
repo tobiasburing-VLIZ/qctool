@@ -15,7 +15,8 @@ test_that("scientificname_id_one_to_one: one name with two IDs, one ID with two 
 
   two_names <- issues[grepl("several scientificNames", message)]
   expect_equal(two_names$line, 6L)                                  # with the author
-  expect_equal(two_names$severity_hint, "warning")
+  expect_true(is.na(two_names$severity_hint))                       # both ways an error
+  expect_equal(two_names$field, "scientificNameID; scientificName")  # the field of the value with two partners first
   expect_equal(two_names$value, lsid(141433))                       # the ID with two names
   expect_equal(two_names$suggestion, "use one scientificName: Abra alba (3 records) or Abra alba Wood, 1802 (1 record)")
 
@@ -37,7 +38,7 @@ test_that("measurementType and measurementUnit go one-to-one with their IDs", {
   types <- run_check("measurementtype_id_one_to_one", dataset)
   expect_equal(sort(types$line), c(4L, 5L))
   expect_equal(types[line == 4, severity_hint], NA_character_)      # 'length' with a second type ID
-  expect_equal(types[line == 5, severity_hint], "warning")          # the type ID with a second text
+  expect_equal(types[line == 5, severity_hint], NA_character_)      # the type ID with a second text: also an error
   expect_equal(run_check("measurementunit_id_one_to_one", dataset)$line, 5L)
 })
 
@@ -65,14 +66,14 @@ test_that("values_and_ids_one_to_one uses the pairs of the reference list", {
                       "https://edmo.seadatanet.org/report/422", "https://edmo.seadatanet.org/report/422"),
     organismID = c("A", "A", "B", "B"), scientificName = c("Abra alba", "Abra alba", "Abra alba", "Mya arenaria"))))
   issues <- run_check("values_and_ids_one_to_one", dataset)
-  expect_true(all(c("institutionCode; institutionID", "scientificName; organismID") %in% issues$field))
+  expect_true(all(c("institutionCode; institutionID", "organismID; scientificName") %in% issues$field))
   # 'one way': a taxon with several organisms is fine, an organism with two taxa is not
-  organisms <- issues[field == "scientificName; organismID"]
+  organisms <- issues[field == "organismID; scientificName"]
   expect_equal(nrow(organisms), 1)
   expect_match(organisms$message, "same organismID goes with several scientificNames")
 })
 
-test_that("qc_one_to_one: one row per value with several IDs, naming all of them", {
+test_that("qc_one_to_one: every combination of a broken relationship, next to each other", {
   # 'metres' with unit ID 123A in 40 records and 123B in 3; 123A also with 'm' (3 records)
   n <- 46
   result <- qc_check(make_archive(
@@ -82,15 +83,41 @@ test_that("qc_one_to_one: one row per value with several IDs, naming all of them
                       measurementUnit = c(rep("metres", 43), rep("m", 3)),
                       measurementUnitID = c(rep("123A", 40), rep("123B", 3), rep("123A", 3)))),
     checks = c("measurementunit_id_one_to_one", "scientificname_id_one_to_one"), online = FALSE)
-  conflicts <- qc_one_to_one(result)
-  expect_equal(conflicts$value, c("metres", "123A"))                  # the error first
-  expect_equal(conflicts$severity, c("error", "warning"))
-  expect_equal(conflicts$suggestion, c("use one measurementUnitID: 123A (40 records) or 123B (3 records)",
-                                       "use one measurementUnit: metres (40 records) or m (3 records)"))
-  expect_equal(conflicts$records, c(3L, 3L))                          # those with the less common one
-  expect_equal(qc_issues(result, problem = 1)$line, 42:44)            # the 123B records
+  combos <- qc_one_to_one(result)
+  expect_equal(combos$conflict, rep(c("measurementUnit 'metres' has 2 different measurementUnitIDs",
+                                      "measurementUnitID '123A' has 2 different measurementUnits"), each = 2))
+  expect_equal(paste(combos$value, "->", combos$other_value), c("metres -> 123A", "metres -> 123B", "123A -> metres", "123A -> m"))
+  expect_equal(combos$records, c(40L, 3L, 40L, 3L))
+  expect_equal(combos$less_common, c(FALSE, TRUE, FALSE, TRUE))
+  expect_true(all(combos$severity == "error"))
+  expect_equal(one_to_one_compared(result), "eMoF (measurements): measurementUnit and measurementUnitID")
 
-  expect_equal(nrow(qc_one_to_one(qc_check(make_archive(occurrence = data.frame(id = "O1", occurrenceID = "O1")), online = FALSE))), 0)
+  # The problem 'metres' on screen 3 shows the combinations of 'metres' only; its records are those with 123B.
+  metres <- result$issues_grouped[value == "metres"]
+  expect_equal(problem_combinations(result, metres)$other_value, c("123A", "123B"))
+  expect_equal(qc_issues(result, problem = metres$problem)$line, 42:44)
+
+  # Nothing broken: no combinations, but the pairs compared are known.
+  fine <- qc_check(make_archive(occurrence = data.frame(id = "O1", occurrenceID = "O1", scientificName = "Abra alba",
+                                                        scientificNameID = lsid(141433))), online = FALSE)
+  expect_equal(nrow(qc_one_to_one(fine)), 0)
+  expect_equal(one_to_one_compared(fine), "Occurrence: scientificName and scientificNameID")
+})
+
+test_that("qc_one_to_one: values and valueIDs per measurement type, numbers with one valueID in one row", {
+  s01 <- "http://vocab.nerc.ac.uk/collection/S01/current/S016/"
+  result <- qc_check(make_archive(
+    event = data.frame(id = "E1", eventID = "E1"),
+    occurrence = data.frame(id = "E1", occurrenceID = "O1"),
+    emof = data.frame(id = "E1", occurrenceID = "O1", measurementType = c("life stage", "life stage", "fatty acid", "fatty acid"),
+                      measurementValue = c("adult", "Adult", "0.12", "0.4"),
+                      measurementValueID = c("S1116", "S1116", s01, s01))),
+    checks = "measurementvalueid_consistent", online = FALSE)
+  combos <- qc_one_to_one(result)
+  expect_equal(combos[value == "S1116", conflict][1], "within measurementType 'life stage': measurementValueID 'S1116' has 2 different measurementValues")
+  expect_equal(combos[value == s01, other_value], "2 different numbers (0.12, 0.4, ...)")
+  numbers <- result$issues_grouped[grepl("measured numbers", message)]
+  expect_equal(nrow(problem_combinations(result, numbers)), 1)
 })
 
 test_that("partner_list: most used first, 'record' for one, at most five", {

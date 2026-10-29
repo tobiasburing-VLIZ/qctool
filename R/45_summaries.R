@@ -171,36 +171,100 @@ qc_links <- function(result) checks_in_short(result, link_check_ids)
 #' Values and their IDs: does every value go with one ID, and every ID with
 #' one value?
 #'
-#' What the one-to-one checks found, one row per conflict: scientificName and
-#' scientificNameID, measurementType and measurementTypeID, measurementUnit
-#' and measurementUnitID, measurementValue and measurementValueID (per type),
-#' and the pairs of `inst/reference/one_to_one_pairs.csv` (institutionCode and
-#' institutionID, country and countryCode, ...).
+#' Broken one-to-one relationships: every combination, next to each other
+#'
+#' A value and its ID go one-to-one: scientificName and scientificNameID,
+#' measurementType and measurementTypeID, measurementUnit and
+#' measurementUnitID, measurementValue and measurementValueID (per type), and
+#' the pairs of `inst/reference/one_to_one_pairs.csv` (institutionCode and
+#' institutionID, country and countryCode, ...). For each value with several
+#' IDs (and each ID with several values) all its combinations are listed, the
+#' most used first, like the tables of BioCheck:
+#'
+#'     conflict                                            value   other_value  records  less_common
+#'     measurementUnit 'metres' has 2 different ...UnitIDs  metres  123A        40     FALSE
+#'     measurementUnit 'metres' has 2 different ...UnitIDs  metres  123B         3     TRUE
+#'     measurementUnitID '123A' has 2 different ...Units    123A    metres      40     FALSE
+#'     measurementUnitID '123A' has 2 different ...Units    123A    m            3     TRUE
 #'
 #' @inheritParams qc_links
-#' @return One row per value with several IDs (or ID with several values):
-#'   check_id, severity, table, fields (the pair), value, message, suggestion
-#'   (all its IDs or values with their number of records, e.g. "use one
-#'   measurementUnitID: 123A (40 records) or 123B (3 records)") and records
-#'   (those with a less common one, to change). Errors first. No rows: every
-#'   value goes with one ID.
-#' @examples
-#' \dontrun{
-#' qc_one_to_one(result)[, .(value, suggestion)]
-#' #   value   suggestion
-#' #   metres  use one measurementUnitID: 123A (40 records) or 123B (3 records)
-#' }
+#' @return One row per combination: check_id, severity, table, conflict (in
+#'   words), field and value (the value or ID with several partners),
+#'   other_field and other_value (its partner), records (with this combination), less_common
+#'   (TRUE: these records are to change), within_group (the measurement type,
+#'   for values and valueIDs). Errors first. No rows: every value goes with one ID.
 #' @export
 qc_one_to_one <- function(result) {
-  conflicts <- result$issues_grouped[check_id %chin% one_to_one_check_ids]
-  conflicts <- conflicts[order(-severity_rank[severity], match(check_id, one_to_one_check_ids), -records)]
-  conflicts[, .(check_id, severity, table, fields = field, value, message, suggestion, records)]
+  combos <- rbindlist(lapply(result_pairs(result), function(p) {
+    if (is.null(p$combinations) || !nrow(p$combinations)) return(NULL)
+    cbind(data.table(check_id = one_to_one_check_of(paste(p$value_field, p$id_field)), table = p$table), p$combinations)
+  }))
+  if (!nrow(combos)) {
+    return(data.table(check_id = character(), severity = character(), table = character(), conflict = character(),
+                      field = character(), value = character(), other_field = character(), other_value = character(),
+                      records = integer(), less_common = logical(), within_group = character()))
+  }
+  combos[, severity := result$checks$severity[match(check_id, result$checks$check_id)]]
+  combos <- combos[order(-severity_rank[severity], match(table, c("event", "occurrence")), match(check_id, one_to_one_check_ids),
+                         conflict, less_common, -records)]
+  combos[, .(check_id, severity, table, conflict, field, value, other_field, other_value, records, less_common, within_group)]
+}
+
+# All combinations of the value (or ID) of one problem of a one-to-one check,
+# e.g. of 'metres': metres -> 123A (40 records), metres -> 123B (3). The
+# problem's field names the value's field first ("measurementUnit; measurementUnitID").
+problem_combinations <- function(result, problem) {
+  fields <- strsplit(problem$field, "; ", fixed = TRUE)[[1]]
+  if (length(fields) != 2 || !problem$check_id %in% one_to_one_check_ids) return(NULL)
+  combos <- qc_one_to_one(result)
+  wanted <- combos$table == problem$table & combos$field == fields[1] & combos$other_field == fields[2] &
+    combos$value == problem$value &
+    (is.na(combos$within_group) | startsWith(problem$suggestion, sprintf("within %s:", combos$within_group)))
+  combos[wanted]
+}
+
+# The value-ID pairs a check run compared (kept by remember_pair() in R/checks_15_one_to_one.R).
+result_pairs <- function(result) if (is.null(result$one_to_one)) list() else result$one_to_one
+
+# Which check compares a pair of fields ("measurementUnit measurementUnitID").
+one_to_one_check_of <- function(pair) {
+  own <- c("scientificName scientificNameID" = "scientificname_id_one_to_one",
+           "measurementType measurementTypeID" = "measurementtype_id_one_to_one",
+           "measurementUnit measurementUnitID" = "measurementunit_id_one_to_one",
+           "measurementValue measurementValueID" = "measurementvalueid_consistent")
+  ifelse(pair %in% names(own), own[pair], "values_and_ids_one_to_one")
+}
+
+# The pairs that were compared, per table: "eMoF: measurementUnit and measurementUnitID, ...".
+one_to_one_compared <- function(result) {
+  pairs <- result_pairs(result)
+  if (!length(pairs)) return(character())
+  # "scientificName and scientificNameID"; a pair that only goes one way: "one eventDate per eventID"
+  in_words <- function(p) if (isFALSE(p$both_ways)) paste("one", p$value_field, "per", p$id_field) else paste(p$value_field, "and", p$id_field)
+  compared <- rbindlist(lapply(pairs, function(p) data.table(table = p$table, pair = in_words(p))))
+  compared <- compared[, .(pairs = paste(pair, collapse = ", ")), by = table]
+  sprintf("%s: %s", table_label(compared$table), compared$pairs)
 }
 
 # The checks of the links between tables, in the order the overview shows them.
 link_check_ids <- c("extension_links_to_core", "extension_eventid_matches_coreid", "extension_occurrenceid_matches_coreid",
                     "emof_occurrenceid_exists", "dna_occurrenceid_exists", "emof_event_matches_occurrence", "emof_record_linked",
                     "parenteventid_exists", "event_hierarchy_no_loops", "eventid_unique", "occurrenceid_unique", "measurementid_unique")
+
+# What each link check confirms when it finds nothing (its title names the problem).
+link_check_fine <- c(
+  extension_links_to_core = "every record points to an existing event or occurrence",
+  extension_eventid_matches_coreid = "eventID columns name the event the record is linked to",
+  extension_occurrenceid_matches_coreid = "occurrenceID columns name the occurrence the record is linked to",
+  emof_occurrenceid_exists = "every occurrenceID in the eMoF exists in the Occurrence table",
+  dna_occurrenceid_exists = "every occurrenceID of the DNA records exists in the Occurrence table",
+  emof_event_matches_occurrence = "measurements of an occurrence are linked to its event",
+  emof_record_linked = "every measurement belongs to an event or occurrence",
+  parenteventid_exists = "every parentEventID exists",
+  event_hierarchy_no_loops = "no loops in the event hierarchy",
+  eventid_unique = "eventIDs are unique",
+  occurrenceid_unique = "occurrenceIDs are unique",
+  measurementid_unique = "measurementIDs are unique")
 
 # The checks of values and their IDs, in the order the overview shows them.
 one_to_one_check_ids <- c("scientificname_id_one_to_one", "measurementtype_id_one_to_one", "measurementunit_id_one_to_one",

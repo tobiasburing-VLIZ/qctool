@@ -151,8 +151,8 @@ Section 5 explains all functions.
 - **Checks that did not run**, right under the verdict, with the reason (e.g. WoRMS did not answer, or the check ran offline). Their results are missing from the report: nothing is known about them, also not that they passed.
 - **Errors, warnings, info, records**: the totals and the records per table.
 - **Essentials**: every EurOBIS record needs a taxon, a position, a date and an occurrenceStatus. Per essential the share of occurrences *without errors* in its fields, also when the value comes from the event above the occurrence. Green: all fine; orange: at least 90 %; red: less; grey: not fully checked, because some of its checks did not run (they are named). Warnings are mentioned but do not lower the share.
-- **Links between tables**: whether every occurrence, measurement and DNA record points to an event or occurrence that exists, every parentEventID to an existing event, and every eventID and occurrenceID is unique. Green: *All links are intact*. Otherwise a red list: which problem, in which table, how many records. These are the most common real errors (section 6, *Links between tables*).
-- **Values and their IDs**: whether every value goes with one ID and every ID with one value: scientificName and scientificNameID, measurementType and measurementTypeID, unit and unitID, value and valueID, institutionCode and institutionID, and so on. Green: *Every value goes with one ID*. Otherwise one row per value with more than one ID (or ID with more than one value), naming all of them with their records, e.g. *metres: use one measurementUnitID: 123A (40 records) or 123B (3 records)*, and how many records to change (section 6, *Values and their IDs*).
+- **Links between tables**: whether every occurrence, measurement and DNA record points to an event or occurrence that exists, every parentEventID to an existing event, and every eventID and occurrenceID is unique. Green: *All links are intact*, with what was checked. Otherwise a red list: which problem, in which table, how many records. These are the most common real errors (section 6, *Links between tables*).
+- **Values and their IDs**: whether every value goes with one ID and every ID with one value: scientificName and scientificNameID, measurementType and measurementTypeID, unit and unitID, value and valueID, institutionCode and institutionID, and so on. Green: *Every value goes with one ID, and every ID with one value*, with the pairs that were compared. Otherwise a table with one heading per broken relationship (e.g. *eMoF: measurementUnit 'metres' has 2 different measurementUnitIDs*) and below it every combination next to each other: *metres → 123A, 40 records, most used* and *metres → 123B, 3 records, less common: change* (section 6, *Values and their IDs*).
 - **Data checks per table**: one card per table (event, occurrence, eMoF, DNA) with what is wrong, in enough detail to fix it in your own file: the problem, the field, what exactly is wrong, example values next to their correction (e.g. `'21/05/2020' → 2020-05-21`), and the number of records. Problems about whole columns are combined (e.g. *Required column missing: eventDate, decimalLatitude, ...*). No record IDs here: those are on screen 3. Tick *errors*, *warnings*, *info* to choose what is listed (errors first: they block the harvest).
 - **Metadata (EML)**: one line; details on screen 4. For a simple table: a note that a table has no metadata.
 - **About this check**: how many checks had which status, the online lookups (how many answers came from the stored answers), notes from reading the data, the rules workbook used, the version.
@@ -162,7 +162,7 @@ Section 5 explains all functions.
 One tab per table; the screen opens on the first table with errors. In each tab:
 
 1. **Problems**: one row per identical problem (same check, field, value and message), with the value, what is wrong and the suggestion side by side, and the number of records. A filter box above each column; *severity*, *problem* and *field* have drop-down lists. The sidebar chooses severities (errors first) and checks; the line above the table says how many problems of other severities are not shown.
-2. Click a problem: **Records with this problem**: up to 10,000 records, each as it is in the data: record ID, line in the file, the link to the core (column *id*, or *id (core link)* in an extension: the event or occurrence the record belongs to), the problem's column(s) first and highlighted, then all other columns. (All records of a problem: CSV download.) A problem "about the whole column, file or table" has no records: e.g. a missing column.
+2. Click a problem: **Records with this problem**: up to 10,000 records, each as it is in the data: record ID, line in the file, the link to the core (column *id*, or *id (core link)* in an extension: the event or occurrence the record belongs to), the problem's column(s) first and highlighted, then all other columns. (All records of a problem: CSV download.) A problem "about the whole column, file or table" has no records: e.g. a missing column. For a broken one-to-one relationship (a value with several IDs, or an ID with several values) a small table above the records shows **all combinations** of that value: *metres → 123A (40 records), metres → 123B (3 records)*; the records below are those with the less common one.
 3. Click a record: **everything about it**, in four tabs:
    - *Issues*: all issues of this record, and those of the events above it (column *where*).
    - *Values*: all its filled fields.
@@ -251,7 +251,7 @@ result <- qc_check(input,           # zip, folder, IPT/GBIF/OBIS address, link t
 | `qc_record(result, "occurrence", 12)` | one record: values, issues (also of its events), events above it, measurements |
 | `qc_essentials(result)` | the essentials table |
 | `qc_links(result)` | the links between tables: broken links per check and table |
-| `qc_one_to_one(result)` | values and their IDs: one row per value with several IDs (or ID with several values), all of them with their records |
+| `qc_one_to_one(result)` | broken one-to-one relationships: every combination of each value with several IDs (or ID with several values), next to each other, with its records |
 | `qc_fair(result)` | FAIR per letter, and per check |
 | `qc_map_points(result)` | positions with problems, and the others (as tables) |
 
@@ -365,20 +365,30 @@ All of them are errors, and all of them are listed together on the Overview unde
 
 ### Values and their IDs
 
-Many values come with an ID that says the same in a fixed form: the scientificName with its scientificNameID, the measurementType with its measurementTypeID, and so on. In the whole dataset they must go **one-to-one**: one value, one ID, and one ID, one value. The tool counts every combination. Each value with more than one ID is **one problem**, which names all its IDs with their number of records, the most used first: value *metres*, suggestion *use one measurementUnitID: 123A (40 records) or 123B (3 records)*. Its records are those with a less common ID (here the 3 with 123B), the ones to change. The same for an ID with more than one value. Empty values are left out.
+Many values come with an ID that says the same in a fixed form: the scientificName with its scientificNameID, the measurementType with its measurementTypeID, and so on. In the whole dataset they must go **one-to-one**: one value, one ID, and one ID, one value. A value with several IDs, or an ID with several values, is a **broken relationship**: one of them is wrong, so some records end up under another taxon, parameter or unit. Both ways it is an **error**. Empty values are left out (like BioCheck).
 
-| What is wrong (example) | Reported by | Severity |
-|---|---|---|
-| *Acantephyra eximia* with `...taxname:564909` in 19 records and with `...taxname:` (cut off) in one | *scientificName and scientificNameID do not go one-to-one* (`scientificname_id_one_to_one`) | error |
-| One scientificNameID with *Pandalus borealis* and with *Pandalus borealis Kroyer, 1838* | idem | warning |
-| A name without scientificNameID while other records of that name have one (or the other way round) | idem, the ID (or name) of the other records as suggestion | warning |
-| *length* with two different measurementTypeIDs, or one measurementTypeID with *sampling net mesh size* and *sampling net outer cover* | *measurementType and measurementTypeID do not go one-to-one* (`measurementtype_id_one_to_one`) | error / warning |
-| *mm* with two unit IDs, or P06 XXXX with *Not applicable* and *not applicable* | *measurementUnit and measurementUnitID do not go one-to-one* (`measurementunit_id_one_to_one`) | error / warning |
-| Within a type: *adult* with two valueIDs, *adult* and *Adult* with one valueID, or one valueID on many different numbers (a NERC term put in measurementValueID instead of measurementTypeID) | *Value and value ID do not go one-to-one* (`measurementvalueid_consistent`) | warning |
-| institutionCode and institutionID, collectionCode and collectionID, datasetName and datasetID, recordedBy and recordedByID, identifiedBy and identifiedByID, country and countryCode, higherGeography and higherGeographyID | *Other values and their IDs do not go one-to-one* (`values_and_ids_one_to_one`) | warning |
-| Only one way (an ID has one value; a value may have several IDs): taxonID and scientificName (in DNA data the taxonID is often the ASV), organismID and scientificName, locationID and locality, and in an occurrence core eventID and eventDate, decimalLatitude, decimalLongitude | idem | warning |
+The tool counts every combination and shows each broken relationship with all its combinations next to each other, the most used first:
 
-One value with several IDs is the worse case: one of the IDs is wrong, so some records end up under another taxon or parameter. One ID with several values is usually spelling, and is reported as a warning. The pairs of the last check are in `reference/one_to_one_pairs.csv` (section 7.2): add a row for another pair. All of them are listed together on the Overview under **Values and their IDs** (in R: `qc_one_to_one(result)`).
+| eMoF: measurementUnit 'metres' has 2 different measurementUnitIDs | | | |
+|---|---|---|---|
+| metres | 123A | 40 records | most used |
+| metres | 123B | 3 records | less common: change |
+
+- **Overview**, *Values and their IDs*: all broken relationships of the dataset in one table, one heading per relationship.
+- **Screen 3** (Data issues): each broken relationship is one problem (value *metres*, suggestion *use one measurementUnitID: 123A (40 records) or 123B (3 records)*). Click it: the combinations of *metres* above its records, which are those with the less common ID (here the 3 with 123B), the ones to change.
+- **In R**: `qc_one_to_one(result)`, one row per combination.
+
+| What is wrong (example) | Reported by |
+|---|---|
+| *Acantephyra eximia* with `...taxname:564909` in 19 records and with `...taxname:` (cut off) in one; one scientificNameID with *Pandalus borealis* and with *Pandalus borealis Kroyer, 1838* | *Broken one-to-one: scientificName and scientificNameID* (`scientificname_id_one_to_one`), in every table with both columns |
+| A name without scientificNameID while other records of that name have one (or the other way round): a warning, with the ID (or name) of the other records as suggestion | idem |
+| *length* with two different measurementTypeIDs, or one measurementTypeID with *sampling net mesh size* and *sampling net outer cover* | *Broken one-to-one: measurementType and measurementTypeID* (`measurementtype_id_one_to_one`) |
+| *mm* with two unit IDs, or P06 XXXX with *Not applicable* and *not applicable* | *Broken one-to-one: measurementUnit and measurementUnitID* (`measurementunit_id_one_to_one`) |
+| Within a measurement type: *adult* with two valueIDs, *adult* and *Adult* with one valueID, or one valueID on many different numbers (a NERC term put in measurementValueID instead of measurementTypeID) | *Broken one-to-one: measurementValue and measurementValueID* (`measurementvalueid_consistent`) |
+| institutionCode and institutionID, collectionCode and collectionID, datasetName and datasetID, recordedBy and recordedByID, identifiedBy and identifiedByID, country and countryCode, higherGeography and higherGeographyID | *Broken one-to-one: other values and their IDs* (`values_and_ids_one_to_one`), in every table with both columns |
+| Only one way (an ID has one value; a value may have several IDs): taxonID and scientificName (in DNA data the taxonID is often the ASV), organismID and scientificName, locationID and locality, and in the occurrences eventID and eventDate, decimalLatitude, decimalLongitude | idem |
+
+The measurement pairs are compared in the eMoF table. Values are compared as written, in one table at a time (not across tables, and not the values an occurrence takes over from its event). The pairs of the last check are in `reference/one_to_one_pairs.csv` (section 7.2): add a row for another pair. The severities are in the rules workbook.
 
 ### Counting
 
@@ -611,7 +621,7 @@ FIFD (43k events, 8.2 million occurrences, 33.8 million measurements): reading a
 | The app goes grey: "The connection to R was lost" | the browser lost its connection to R (a server that closes quiet connections, a laptop that slept, or something that could not be sent to the browser) | the app has stopped and R is free: run `qc_app()` again and reload the page. If it happens with one particular file, please send that file to whoever maintains the tool |
 | A column of a table is not used | no term was chosen for it | choose the term in the mapping on screen 1 |
 | The box above a column cannot be used (grey) | in the rows of this table the column has only one value (or is empty), so there is nothing to filter | in Explore > Tables of a table over 100,000 rows only its first 100 rows are shown: search the whole table with *Find*, or raise the option `qctool.max_table_rows` |
-| A value with two IDs: which IDs are they? | the records of such a problem are only those with a less common ID | its suggestion names all the IDs with their records; all such values at once: Overview, *Values and their IDs* |
+| A value with two IDs: which IDs are they? | the records of such a problem are only those with a less common ID | click the problem on screen 3: the combinations are shown above its records; all of them at once: Overview, *Values and their IDs* |
 
 ---
 

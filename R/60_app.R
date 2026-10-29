@@ -149,14 +149,22 @@ severity_input <- function(id, selected = "error", inline = FALSE) {
 
 # A table with a filter box above every column (dropdowns for columns with few
 # different values) and paging on the server.
-filter_table <- function(data, page_length = 10, selection = "single", dropdowns = c("severity", "check", "table", "field", "status", "where")) {
+filter_table <- function(data, page_length = 10, selection = "single", dropdowns = c("severity", "check", "table", "field", "status", "where"),
+                         group_by = NULL) {
   data <- as.data.frame(utf8_safe(data))
   for (column in intersect(dropdowns, names(data))) data[[column]] <- factor(data[[column]])
   links <- web_links(data)
+  options <- list(pageLength = page_length, scrollX = TRUE, searchHighlight = TRUE, autoWidth = FALSE)
+  # group_by: the rows with the same value in this column under one heading (that column itself hidden).
+  if (!is.null(group_by)) {
+    column <- match(group_by, names(links$data)) - 1L   # counted from 0, without row names
+    options$rowGroup <- list(dataSrc = column)
+    options$columnDefs <- list(list(visible = FALSE, targets = column))
+  }
   DT::datatable(links$data, rownames = FALSE, selection = selection, filter = list(position = "top", clear = FALSE),
-                escape = links$escape,
+                escape = links$escape, extensions = if (is.null(group_by)) list() else "RowGroup",
                 fillContainer = FALSE,   # its own height: no small scrolling box inside a card
-                options = list(pageLength = page_length, scrollX = TRUE, searchHighlight = TRUE, autoWidth = FALSE))
+                options = options)
 }
 
 # A small table shown as it is: for short lists.

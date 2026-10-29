@@ -28,6 +28,7 @@ issues_ui <- function(id) {
                 DT::DTOutput(ns("problems"), fill = FALSE)),
     bslib::card(full_screen = TRUE, fill = FALSE,   # natural height: no small scrolling boxes
                 bslib::card_header(shiny::textOutput(ns("records_title"), inline = TRUE)),
+                shiny::uiOutput(ns("combinations")),
                 shiny::uiOutput(ns("records_note")),
                 DT::DTOutput(ns("records"), fill = FALSE)),
     bslib::card(full_screen = TRUE, fill = FALSE,   # natural height: no small scrolling boxes
@@ -120,6 +121,21 @@ issues_server <- function(id, result) {
       if (isTRUE(p$records == 0)) return("This problem is about a whole column, a file or the table, not about single records")
       sprintf("Records with this problem: %s%s", format(p$records, big.mark = ","),
               if (p$records > records_shown) sprintf(" (the first %s shown; all in the CSV download)", format(records_shown, big.mark = ",")) else "")
+    })
+
+    # A broken one-to-one relationship: all combinations of its value (or ID)
+    # next to each other, above the records that use a less common one.
+    output$combinations <- shiny::renderUI({
+      if (length(input$problems_rows_selected) != 1) return(NULL)
+      combos <- safely(problem_combinations(result(), chosen_problem()))
+      if (failed(combos)) return(error_alert(combos, "The combinations"))
+      if (is.null(combos) || !nrow(combos)) return(NULL)
+      shown <- combos[, .(value, `goes with` = other_value, records = prettyNum(records, big.mark = ","),
+                          use = ifelse(less_common, "less common: these records are listed below", "most used"))]
+      setnames(shown, c("value", "goes with"), c(combos$field[1], combos$other_field[1]))
+      shiny::div(class = "mx-3 mt-2",
+                 shiny::p(class = "mb-1", shiny::strong(utf8_safe(combos$conflict[1])), ". All combinations in this table:"),
+                 plain_table(shown, 10))
     })
 
     output$records_note <- shiny::renderUI({

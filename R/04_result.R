@@ -7,6 +7,8 @@
 #   result$issues_grouped  one row per identical problem: check, field, value,
 #                          message, number of records, first line, example records
 #   result$issue_rows      compact: problem number + row number per affected record
+#   result$one_to_one      the value-ID pairs compared, with every combination of
+#                          each broken one-to-one relationship (qc_one_to_one())
 #   result$dataset         the data that was checked (needed to build the detail)
 #
 #   qc_issues(result, ...) the full detail: one row per issue and record, with
@@ -63,6 +65,7 @@ build_result <- function(dataset, rules, plan, outcome, started) {
                                header_row = ifelse(header_lines > 0, "yes", "no"))],
     checks = checks,
     lookups = outcome$lookups,   # what was looked up online or taken from the cache
+    one_to_one = outcome$one_to_one,   # value-ID pairs compared, every combination of each conflict (qc_one_to_one())
     issues_grouped = problems,
     issue_rows = rows,
     dataset = dataset

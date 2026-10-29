@@ -166,66 +166,60 @@ essentials_section <- function(r) {
 # The links between the tables (IDs, parent events, core links): the most
 # common real errors, so they get their own place, right under the essentials.
 links_section <- function(r) {
-  short_checks_section(
-    qc_links(r), heading = "Links between tables",   # none for a single table: nothing is linked
-    intro = c("Every occurrence, measurement and DNA record must point to an event or occurrence",
-              "that exists, every parentEventID to an existing event, and every eventID and occurrenceID must be unique.",
-              "Records with a broken link get lost at the harvest."),
-    all_fine = "All links are intact.", records_column = "records with a broken link",
-    where = "The records, with their links in the column 'id (core link)': screen 3 (Data issues), the table named here.")
+  links <- qc_links(r)
+  if (!nrow(links)) return(NULL)   # a single table: nothing is linked
+  heading <- shiny::h4(class = "mt-4", "Links between tables")
+  intro <- shiny::p(class = "text-muted", "Every occurrence, measurement and DNA record must point to an event or occurrence",
+                    "that exists, every parentEventID to an existing event, and every eventID and occurrenceID must be unique.",
+                    "Records with a broken link get lost at the harvest.")
+  broken <- links[records > 0]
+  fine <- unique(link_check_fine[links[records == 0, check_id]])
+  checked <- shiny::p(class = "small text-muted mb-0", sprintf("Checked: %s.", paste(fine, collapse = "; ")))
+  if (!nrow(broken)) {
+    return(shiny::tagList(heading, intro, alert(shiny::tagList(shiny::strong("All links are intact."), " ", checked), "success")))
+  }
+  shown <- broken[, .(severity, problem, table = table_label(table), `records with a broken link` = format(records, big.mark = ","))]
+  shiny::tagList(
+    heading, intro,
+    bslib::card(class = if ("error" %in% broken$severity) "border-danger" else "border-warning", fill = FALSE, bslib::card_body(fillable = FALSE,
+      colour_severity(plain_table(shown, 15)),
+      shiny::p(class = "small text-muted mt-2 mb-1", "The records, with their links in the column 'id (core link)':",
+               "screen 3 (Data issues), the table named here."),
+      if (length(fine)) shiny::p(class = "small text-muted mb-0", sprintf("Fine: %s.", paste(fine, collapse = "; "))))))
 }
 
-# Values and their IDs: one scientificName with two scientificNameIDs, one
-# measurementType with two measurementTypeIDs, ... Right under the links. Each
-# conflict is one row, with all the IDs (or values) in use and their records,
-# so it is seen at once which ones they are.
+# Values and their IDs (scientificName and scientificNameID, measurementType and
+# measurementTypeID, ...), right under the links. A value with several IDs and
+# an ID with several values are shown with all their combinations next to each
+# other, like BioCheck: 'metres' -> 123A (40 records), 'metres' -> 123B (3).
 one_to_one_section <- function(r) {
-  short <- checks_in_short(r, one_to_one_check_ids)
-  if (!nrow(short)) return(NULL)
+  compared <- one_to_one_compared(r)
+  if (!length(compared)) return(NULL)
   heading <- shiny::h4(class = "mt-4", "Values and their IDs")
   intro <- shiny::p(class = "text-muted", "A value and its ID go one-to-one: each scientificName has one scientificNameID,",
                     "each measurementType one measurementTypeID, each unit one unitID, and the other way round.",
-                    "One value with two IDs means one ID is wrong; one ID with two values is usually a spelling difference.")
-  fine <- unique(short[records == 0, problem])
-  checked <- shiny::p(class = "small text-muted mb-0", sprintf("Checked and fine (%d): %s.", length(fine), paste(fine, collapse = "; ")))
-  conflicts <- qc_one_to_one(r)
-  if (!nrow(conflicts)) {
-    return(shiny::tagList(heading, intro, alert(shiny::tagList(shiny::strong("Every value goes with one ID."), " ", checked), "success")))
+                    "A value with several IDs, or an ID with several values, is a broken relationship: one of them is wrong.")
+  checked <- shiny::p(class = "small text-muted mb-0", sprintf("Compared: %s.", paste(compared, collapse = "; ")))
+  combos <- qc_one_to_one(r)
+  if (!nrow(combos)) {
+    return(shiny::tagList(heading, intro, alert(shiny::tagList(
+      shiny::strong("Every value goes with one ID, and every ID with one value."), " ", checked), "success")))
   }
-  shown <- conflicts[, .(severity, table = table_label(table), fields = gsub("; ", " and ", fields, fixed = TRUE),
-                         value = shorten(value, 100), `what is wrong` = sub(";.*$", "", message),
-                         suggestion, `records to change` = prettyNum(records, big.mark = ","))]
+  conflicts <- uniqueN(combos[, .(table, conflict)])
+  # One heading per conflict ("Occurrence: scientificName 'X' has 2 different scientificNameIDs"), its combinations below it.
+  shown <- combos[, .(conflict = paste0(table_label(table), ": ", conflict), severity, value = shorten(value, 100),
+                      `goes with` = shorten(other_value, 100), records = prettyNum(records, big.mark = ","),
+                      use = ifelse(less_common, "less common: change", "most used"))]
+  table <- filter_table(shown, 20, selection = "none", dropdowns = "severity", group_by = "conflict")
+  table <- DT::formatStyle(table, "use", color = DT::styleEqual("less common: change", "#B03A2E"), fontWeight = "bold")
   shiny::tagList(
     heading, intro,
-    bslib::card(class = if ("error" %in% conflicts$severity) "border-danger" else "border-warning", bslib::card_body(
-      shiny::p(class = "mb-2", sprintf("%s %s with more than one partner:", prettyNum(nrow(conflicts), big.mark = ","),
-                                       if (nrow(conflicts) == 1) "value or ID" else "values or IDs")),
-      colour_severity(plain_table(shown, 10)),
-      shiny::p(class = "small text-muted mt-2 mb-1", "'Records to change' are those with a less common partner.",
-               "They are listed on screen 3 (Data issues), in the table named here."),
-      if (length(fine)) checked)))
-}
-
-# A heading, a short text and the result of some checks: green when all are
-# fine, otherwise a table of what was found (red for errors).
-short_checks_section <- function(short, heading, intro, all_fine, records_column, where) {
-  if (!nrow(short)) return(NULL)
-  found <- short[records > 0]
-  intro <- shiny::p(class = "text-muted", paste(intro, collapse = " "))
-  fine <- unique(short[records == 0, problem])
-  checked <- shiny::p(class = "small text-muted mb-0", sprintf("Checked and fine (%d): %s.", length(fine), paste(fine, collapse = "; ")))
-  if (!nrow(found)) {
-    return(shiny::tagList(shiny::h4(class = "mt-4", heading), intro,
-                          alert(shiny::tagList(shiny::strong(all_fine), " ", checked), "success")))
-  }
-  shown <- found[, .(severity, problem, table = table_label(table), records = format(records, big.mark = ","))]
-  setnames(shown, "records", records_column)
-  shiny::tagList(
-    shiny::h4(class = "mt-4", heading), intro,
-    bslib::card(class = if ("error" %in% found$severity) "border-danger" else "border-warning", bslib::card_body(
-      colour_severity(plain_table(shown, 15)),
-      shiny::p(class = "small text-muted mt-2 mb-1", where),
-      if (length(fine)) checked)))
+    bslib::card(class = if ("error" %in% combos$severity) "border-danger" else "border-warning", fill = FALSE, bslib::card_body(fillable = FALSE,
+      shiny::p(class = "mb-2", sprintf("%s broken %s, every combination next to each other (the most used first):",
+                                       prettyNum(conflicts, big.mark = ","), if (conflicts == 1) "relationship" else "relationships")),
+      colour_severity(table),
+      shiny::p(class = "small text-muted mt-2 mb-1", "The records of each combination: screen 3 (Data issues), the table named here."),
+      checked)))
 }
 
 # The metadata in one line; the details are on screen 4.

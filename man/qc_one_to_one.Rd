@@ -11,24 +11,28 @@ qc_one_to_one(result)
 \item{result}{A \code{\link[=qc_check]{qc_check()}} result.}
 }
 \value{
-One row per value with several IDs (or ID with several values):
-check_id, severity, table, fields (the pair), value, message, suggestion
-(all its IDs or values with their number of records, e.g. "use one
-measurementUnitID: 123A (40 records) or 123B (3 records)") and records
-(those with a less common one, to change). Errors first. No rows: every
-value goes with one ID.
+One row per combination: check_id, severity, table, conflict (in
+words), field and value (the value or ID with several partners),
+other_field and other_value (its partner), records (with this combination), less_common
+(TRUE: these records are to change), within_group (the measurement type,
+for values and valueIDs). Errors first. No rows: every value goes with one ID.
 }
 \description{
-What the one-to-one checks found, one row per conflict: scientificName and
-scientificNameID, measurementType and measurementTypeID, measurementUnit
-and measurementUnitID, measurementValue and measurementValueID (per type),
-and the pairs of \code{inst/reference/one_to_one_pairs.csv} (institutionCode and
-institutionID, country and countryCode, ...).
+Broken one-to-one relationships: every combination, next to each other
 }
-\examples{
-\dontrun{
-qc_one_to_one(result)[, .(value, suggestion)]
-#   value   suggestion
-#   metres  use one measurementUnitID: 123A (40 records) or 123B (3 records)
-}
+\details{
+A value and its ID go one-to-one: scientificName and scientificNameID,
+measurementType and measurementTypeID, measurementUnit and
+measurementUnitID, measurementValue and measurementValueID (per type), and
+the pairs of \code{inst/reference/one_to_one_pairs.csv} (institutionCode and
+institutionID, country and countryCode, ...). For each value with several
+IDs (and each ID with several values) all its combinations are listed, the
+most used first, like the tables of BioCheck:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{conflict                                            value   other_value  records  less_common
+measurementUnit 'metres' has 2 different ...UnitIDs  metres  123A        40     FALSE
+measurementUnit 'metres' has 2 different ...UnitIDs  metres  123B         3     TRUE
+measurementUnitID '123A' has 2 different ...Units    123A    metres      40     FALSE
+measurementUnitID '123A' has 2 different ...Units    123A    m            3     TRUE
+}\if{html}{\out{</div>}}
 }
